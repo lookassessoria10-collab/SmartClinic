@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartClinic</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#F4F6F8;
+  --surface:#FFFFFF;
+  --border:#E3E8EC;
+  --ink:#1B2430;
+  --ink-soft:#6B7684;
+  --brand:#1C6E8C;
+  --brand-light:#3F9CC0;
+  --brand-dark:#12495E;
+  --brand-tint:#E7F1F4;
+  --good:#3E8E5A;
+  --good-tint:#E9F5EC;
+  --warn:#B9791E;
+  --warn-tint:#FBF1DF;
+  --danger:#C2483B;
+  --danger-tint:#FBEBE9;
+  --purple:#7C4FBF;
+  --purple-tint:#F1E7FB;
+  --radius:12px;
+  --radius-sm:8px;
+  --shadow:0 1px 2px rgba(20,30,40,0.06), 0 4px 14px rgba(20,30,40,0.05);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+h1,h2,h3{font-family:'Sora',sans-serif;margin:0 0 6px;}
+h2{font-size:1.25rem;}
+h3{font-size:1rem;}
+button{font-family:'Inter',sans-serif;cursor:pointer;}
+input,select,textarea{font-family:'Inter',sans-serif;}
+p{line-height:1.55;}
+.icon{width:19px;height:19px;flex-shrink:0;}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeInOpacity{from{opacity:0;}to{opacity:1;}}
+@keyframes modalIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+
+/* Auth */
+.boot-loading{display:flex;align-items:center;justify-content:center;min-height:100vh;color:var(--ink-soft);}
+.auth-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg, var(--brand-dark), #0B2E3D);}
+.auth-card{background:var(--surface);border-radius:16px;padding:32px;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.3);animation:fadeInUp .3s ease;}
+.auth-mark{width:44px;height:44px;border-radius:10px;background:var(--brand-tint);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;margin-bottom:16px;}
+
+/* Shell / layout */
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:230px;background:linear-gradient(180deg, var(--brand-dark) 0%, #0B2E3D 100%);color:#fff;display:flex;flex-direction:column;padding:20px 14px;gap:6px;flex-shrink:0;}
+.sidebar-brand-row{display:flex;align-items:center;gap:10px;padding:6px 10px 20px;}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:0.8rem;flex-shrink:0;color:#fff;}
+.sidebar-brand{font-family:'Sora',sans-serif;font-weight:700;font-size:1rem;color:#fff;overflow-wrap:anywhere;}
+.sidebar-nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+.nav-item{display:flex;align-items:center;gap:10px;background:none;border:none;border-left:3px solid transparent;color:rgba(255,255,255,0.75);padding:10px 12px 10px 9px;border-radius:8px;font-weight:600;font-size:0.88rem;text-align:left;transition:background .15s ease;}
+.nav-item.active{background:rgba(255,255,255,0.14);color:#fff;border-left-color:var(--brand-light);}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:#fff;}
+.switch-mode-btn{display:flex;align-items:center;gap:8px;background:var(--brand);color:#fff;border:none;padding:10px 12px;border-radius:8px;font-weight:600;font-size:0.82rem;margin-top:10px;transition:background .15s ease, transform .1s ease;}
+.switch-mode-btn:hover{background:var(--brand-light);}
+.switch-mode-btn:active{transform:scale(.97);}
+.sidebar-logout{background:none;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.75);padding:9px 12px;border-radius:8px;font-weight:600;font-size:0.8rem;margin-top:8px;display:flex;align-items:center;gap:6px;transition:background .15s ease, color .15s ease;}
+.sidebar-logout:hover{background:rgba(255,255,255,0.1);color:#fff;}
+.backdrop-mobile{display:none;}
+.bottom-nav{display:none;}
+.main-area{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 26px;border-bottom:1px solid var(--border);background:var(--surface);}
+.topbar-title{font-family:'Sora',sans-serif;font-weight:700;font-size:1.1rem;}
+.topbar-action{display:none;background:var(--brand-tint);color:var(--brand);border:none;width:36px;height:36px;border-radius:10px;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s ease, color .15s ease, transform .1s ease;}
+.topbar-action:hover{background:var(--brand);color:#fff;}
+.topbar-action:active{transform:scale(.93);}
+.hamburger{display:none;}
+.content{padding:22px 26px 70px;max-width:960px;width:100%;margin:0 auto;animation:fadeInUp .28s ease;}
+
+.client-shell{max-width:600px;margin:0 auto;min-height:100vh;}
+.client-shell::before{content:'';display:block;height:4px;background:linear-gradient(90deg, var(--brand), var(--brand-light));}
+.client-topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--border);background:var(--surface);}
+.link-btn{display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:0.8rem;font-weight:600;color:var(--ink-soft);transition:background .15s ease, border-color .15s ease, color .15s ease;}
+.link-btn:hover{background:var(--bg);border-color:var(--ink-soft);color:var(--ink);}
+.client-flow{padding:24px 22px 60px;animation:fadeInUp .28s ease;}
+
+/* Buttons */
+.btn-primary{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, var(--brand-light), var(--brand));color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:600;font-size:0.86rem;box-shadow:0 2px 10px rgba(28,110,140,0.32);transition:transform .1s ease, box-shadow .15s ease, background .15s ease;}
+.btn-primary:hover{background:linear-gradient(135deg, var(--brand), var(--brand-dark));}
+.btn-primary:active{transform:scale(.97);}
+.btn-danger{background:var(--danger-tint);color:var(--danger);border:1px solid var(--danger);padding:6px 12px;border-radius:7px;font-size:0.8rem;transition:background .15s ease, color .15s ease, transform .1s ease;}
+.btn-danger:hover{background:var(--danger);color:#fff;}
+.btn-danger:active{transform:scale(.96);}
+.btn-danger-solid{background:var(--danger);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;transition:background .15s ease, transform .1s ease;}
+.btn-danger-solid:hover{background:#a53a2f;}
+.btn-danger-solid:active{transform:scale(.97);}
+.file-btn{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);padding:10px 16px;border-radius:8px;font-weight:600;font-size:0.86rem;color:var(--ink);cursor:pointer;transition:background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;}
+.file-btn:hover{background:var(--brand-tint);border-color:var(--brand);color:var(--brand-dark);}
+.file-btn:active{transform:scale(.96);}
+.ghost-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-weight:600;font-size:0.85rem;color:var(--ink-soft);transition:background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;}
+.ghost-btn:hover{background:var(--bg);border-color:var(--ink-soft);color:var(--ink);}
+.ghost-btn:active{transform:scale(.96);}
+.back-link{display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:var(--ink-soft);font-weight:600;padding:0 0 14px;font-size:0.86rem;}
+
+.section-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px;}
+.section-head > div{display:flex;gap:8px;flex-wrap:wrap;}
+.hint{color:var(--ink-soft);font-size:0.86rem;}
+.empty-note{color:var(--ink-soft);font-style:italic;margin-top:16px;}
+
+/* Dashboard */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:16px 0 22px;}
+.kpi-card{background:var(--kpi-tint, var(--brand-tint));border:1px solid transparent;border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+.kpi-icon{width:34px;height:34px;border-radius:9px;background:var(--surface);color:var(--kpi-accent, var(--brand));display:flex;align-items:center;justify-content:center;margin-bottom:10px;box-shadow:0 2px 6px rgba(20,30,40,0.08);}
+.pill-cta{display:flex;width:100%;justify-content:center;border-radius:999px;padding:14px 20px;font-size:0.95rem;margin-top:10px;}
+.whatsapp-btn{background:linear-gradient(135deg,#2FE07B,#1DA851);box-shadow:0 2px 10px rgba(29,168,81,0.32);color:#fff;text-decoration:none;white-space:nowrap;cursor:pointer;}
+.whatsapp-btn:hover{background:linear-gradient(135deg,#22c96a,#178a43);}
+.whatsapp-btn:active{transform:scale(.97);}
+.wa-icon-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#EAFBF1;color:#1DA851;flex-shrink:0;cursor:pointer;text-decoration:none;transition:background .15s ease, color .15s ease, transform .1s ease;}
+.wa-icon-btn:hover{background:#1DA851;color:#fff;}
+.wa-icon-btn:active{transform:scale(.9);}
+.wa-icon-btn .icon{width:16px;height:16px;}
+.kpi-icon .icon{width:18px;height:18px;}
+.kpi-value{font-family:'Sora',sans-serif;font-size:1.7rem;font-weight:800;}
+.kpi-label{color:var(--ink-soft);font-size:0.8rem;}
+.pend-card{background:var(--warn-tint);border:1px solid #EBD8A8;border-radius:var(--radius);padding:18px 20px;}
+.pend-card h3{display:flex;align-items:center;gap:8px;color:var(--warn);margin-bottom:8px;}
+.pend-card h3 .icon{width:18px;height:18px;}
+.pend-card ul{margin:0;padding-left:20px;}
+.pend-card li{margin-bottom:4px;font-size:0.88rem;}
+.ok-note{color:var(--good);font-weight:600;}
+.welcome-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);}
+.report-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);margin-bottom:16px;}
+.period-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;}
+.period-btn{background:none;border:none;padding:7px 13px;border-radius:7px;font-weight:600;font-size:0.78rem;color:var(--ink-soft);transition:background .15s ease, color .15s ease;}
+.period-btn:hover:not(.active){background:var(--bg);color:var(--ink);}
+.period-btn.active{background:var(--brand);color:#fff;}
+.chart-bars{display:flex;align-items:flex-end;gap:3px;height:140px;margin-top:16px;padding:0 2px;}
+.chart-bar-wrap{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+.chart-bar{width:70%;background:linear-gradient(180deg, var(--brand-light), var(--brand));border-radius:4px 4px 2px 2px;min-height:2px;transition:height .6s cubic-bezier(.4,0,.2,1);}
+.chart-bar-label{font-size:0.6rem;color:var(--ink-soft);margin-top:4px;font-family:'IBM Plex Mono',monospace;}
+.rank-row{margin-bottom:14px;}
+.rank-row:last-child{margin-bottom:0;}
+.rank-top{display:flex;justify-content:space-between;gap:10px;font-size:0.88rem;margin-bottom:4px;}
+.rank-name{font-weight:600;}
+.rank-value{font-family:'IBM Plex Mono',monospace;color:var(--ink-soft);white-space:nowrap;}
+.rank-bar-bg{height:7px;background:var(--border);border-radius:6px;overflow:hidden;}
+.rank-bar-fill{height:100%;background:linear-gradient(90deg, var(--brand-light), var(--brand));border-radius:6px;}
+.rank-meta{font-size:0.76rem;color:var(--ink-soft);margin-top:3px;}
+.hero-card{background:linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);border-radius:20px;padding:26px 28px;display:flex;align-items:center;gap:26px;flex-wrap:wrap;color:#fff;box-shadow:0 14px 34px rgba(18,73,94,0.35);margin:16px 0 22px;position:relative;overflow:hidden;}
+.hero-card::after{content:'';position:absolute;right:-40px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,0.14), transparent 70%);}
+.hero-closed{background:linear-gradient(135deg,#5b6672,#38414a);}
+.hero-gauge{position:relative;width:120px;height:120px;flex-shrink:0;}
+.hero-gauge svg{width:100%;height:100%;}
+.gauge-arc{transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1);}
+.hero-gauge-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:800;}
+.hero-eyebrow{font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;opacity:.85;font-weight:700;}
+.hero-text h2{color:#fff;margin:4px 0 8px;font-size:1.25rem;}
+.hero-stats{display:flex;gap:16px;font-size:0.85rem;opacity:.92;flex-wrap:wrap;}
+
+/* Agenda */
+.date-strip{display:flex;align-items:center;gap:6px;margin:14px 0 18px;}
+.date-strip-scroll{display:flex;gap:8px;overflow-x:auto;flex:1;padding-bottom:2px;}
+.date-cell{flex-shrink:0;width:44px;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;padding:4px 0;}
+.date-cell .dow{font-size:0.65rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.02em;}
+.date-cell .dnum{font-family:'Sora',sans-serif;font-weight:700;font-size:0.92rem;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--border);transition:background .15s ease;}
+.date-cell.active .dnum{background:var(--brand);border-color:var(--brand);color:#fff;}
+.date-cell:disabled{cursor:not-allowed;}
+.date-cell:disabled .dnum{opacity:.35;}
+.date-nav-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .15s ease, border-color .15s ease, color .15s ease, transform .1s ease;}
+.date-nav-btn:hover{background:var(--brand-tint);border-color:var(--brand);color:var(--brand);}
+.date-nav-btn:active{transform:scale(.92);}
+.date-nav-btn .icon{width:16px;height:16px;}
+
+.appt-list{display:flex;flex-direction:column;gap:10px;}
+.appt-card{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 16px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s ease, box-shadow .15s ease;}
+.appt-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(20,30,40,0.10);}
+.appt-time{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:0.9rem;width:50px;flex-shrink:0;}
+.appt-info{flex:1;min-width:0;}
+.appt-name{font-weight:600;}
+.appt-meta{color:var(--ink-soft);font-size:0.8rem;}
+.status-pill{display:inline-flex;align-items:center;gap:5px;font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.status-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.status-marcado{background:var(--brand-tint);color:var(--brand);}
+.status-remarcado{background:var(--purple-tint);color:var(--purple);}
+.status-em_atendimento{background:var(--warn-tint);color:var(--warn);}
+.status-atendido{background:var(--good-tint);color:var(--good);}
+.status-desmarcado{background:var(--danger-tint);color:var(--danger);}
+
+/* Procedures */
+.proc-grid-admin{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:14px;}
+.proc-card2{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);transition:transform .15s ease, box-shadow .15s ease;}
+.proc-card2:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(20,30,40,0.10);}
+.proc-card2.inactive{opacity:0.5;}
+.proc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+.proc-icon{width:34px;height:34px;border-radius:9px;background:var(--brand-tint);color:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.proc-icon .icon{width:17px;height:17px;}
+.proc-name2{font-weight:600;font-size:0.95rem;margin-top:2px;}
+.proc-meta2{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--ink-soft);margin-top:4px;}
+.warn-chip{font-size:0.68rem;background:var(--warn-tint);color:var(--warn);padding:2px 8px;border-radius:10px;font-weight:700;display:inline-block;margin-top:6px;}
+.proc-actions2{display:flex;gap:12px;align-items:center;font-size:0.82rem;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;}
+.proc-actions2 button{background:none;border:none;color:var(--ink-soft);font-weight:600;font-size:0.8rem;display:flex;align-items:center;gap:4px;transition:color .15s ease;}
+.proc-actions2 button:hover{color:var(--brand);}
+.proc-actions2 button[data-procdel]:hover{color:var(--danger);}
+.proc-actions2 .icon{width:15px;height:15px;}
+.switch{display:flex;align-items:center;gap:6px;font-weight:600;font-size:0.8rem;cursor:pointer;transition:color .15s ease;}
+.switch:hover{color:var(--brand);}
+
+/* Availability */
+.avail-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+.avail-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;}
+.avail-row label.switch{min-width:100px;}
+.avail-row input[type=time]{padding:6px 8px;border:1px solid var(--border);border-radius:6px;}
+.avail-row input[disabled]{opacity:0.4;}
+
+/* Patients */
+.patient-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.patient-card{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 16px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s ease, box-shadow .15s ease;}
+.patient-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(20,30,40,0.10);}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--brand-tint);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-family:'Sora',sans-serif;font-size:0.85rem;}
+.patient-info{flex:1;min-width:0;}
+.patient-name{font-weight:600;}
+.patient-meta{color:var(--ink-soft);font-size:0.8rem;}
+.completion-ring{width:34px;height:34px;flex-shrink:0;}
+.tag{font-size:0.68rem;background:var(--brand-tint);color:var(--brand);padding:3px 9px;border-radius:20px;font-weight:700;white-space:nowrap;}
+.search-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-top:16px;font-size:0.9rem;}
+
+/* Client flow */
+.proc-grid,.day-grid,.slot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:10px;margin-top:16px;}
+.proc-choice{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left;box-shadow:var(--shadow);}
+.pc-name{font-weight:600;font-size:0.9rem;}
+.pc-meta{font-size:0.78rem;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;}
+.day-choice,.slot-choice{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;font-weight:600;font-family:'IBM Plex Mono',monospace;font-size:0.88rem;box-shadow:var(--shadow);}
+.day-choice:disabled,.slot-choice:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none;}
+.proc-choice:hover,.day-choice:hover:not(:disabled),.slot-choice:hover:not(:disabled){border-color:var(--brand);color:var(--brand);}
+.summary-card{background:var(--surface);border-left:3px solid var(--brand);padding:14px 16px;border-radius:8px;margin:16px 0;font-size:0.92rem;line-height:1.7;box-shadow:var(--shadow);}
+.confirm-screen{text-align:center;padding:50px 20px;}
+.confirm-screen h2{color:var(--good);}
+.confirm-icon-wrap{width:76px;height:76px;border-radius:50%;background:var(--good-tint);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.confirm-screen .icon{width:38px;height:38px;color:var(--good);}
+
+/* Forms & modal */
+label{display:block;margin-bottom:14px;font-size:0.83rem;color:var(--ink-soft);font-weight:600;}
+label input,label select,label textarea{display:block;width:100%;margin-top:5px;padding:9px 10px;border:1px solid var(--border);border-radius:7px;font-size:0.94rem;color:var(--ink);font-weight:400;}
+.modal-backdrop{position:fixed;inset:0;background:rgba(20,30,40,0.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px;animation:fadeInOpacity .15s ease;}
+.modal-card{background:var(--surface);border-radius:14px;padding:26px;max-width:460px;width:100%;box-shadow:0 12px 34px rgba(0,0,0,0.22);max-height:85vh;overflow-y:auto;animation:modalIn .18s ease;}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;position:sticky;bottom:0;background:var(--surface);padding-top:6px;}
+.form-error{color:var(--danger);font-size:0.82rem;margin:-6px 0 12px;min-height:1em;}
+.template-textarea{width:100%;height:70px;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;padding:10px;border:1px solid var(--border);border-radius:7px;margin:10px 0;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:8px;opacity:0;transition:all .3s;z-index:100;font-size:0.87rem;max-width:88%;text-align:center;}
+.toast.show{opacity:1;transform:translate(-50%,0);}
+.footer-note{text-align:center;color:var(--ink-soft);font-size:0.72rem;padding:16px;}
+
+@media (max-width:860px){
+  .sidebar{display:none;}
+  .topbar-action{display:flex;}
+  .topbar{padding:14px 16px;}
+  .content{padding:16px 16px 96px;}
+  .client-flow{padding:20px 16px;}
+  .bottom-nav{
+    display:flex; position:fixed; bottom:0; left:0; right:0; background:var(--surface);
+    border-top:1px solid var(--border); z-index:50; padding:8px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 16px rgba(20,30,40,0.07);
+  }
+  .bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--ink-soft);font-size:0.63rem;font-weight:600;padding:5px 2px;border-radius:8px;}
+  .bottom-nav-item.active{color:var(--brand);}
+  .bottom-nav-item .icon{width:20px;height:20px;}
+}
+</style>
+</head>
+<body>
+<div id="root"><div class="boot-loading">Carregando…</div></div>
+<div id="modalRoot"></div>
+
+<script>
+/* ---------- Supabase ---------- */
+const SUPABASE_URL='https://xymjzklqgmsydaqcykyt.supabase.co';
+const SUPABASE_KEY='sb_publishable_T45wE-2JUjWCgmyIk2WQIQ_N1eajeUT';
+const sb=window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ---------- Small helpers ---------- */
+function pad(n){ return String(n).padStart(2,'0'); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function toISODate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function timeToMin(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
+function minToTime(m){ return pad(Math.floor(m/60))+':'+pad(m%60); }
+function fmtMoney(v){ return v==null ? 'consulte' : 'R$ '+Number(v).toFixed(2).replace('.',','); }
+function escapeHTML(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function shiftDate(iso,delta){ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+delta); return toISODate(d); }
+function initials(name){ const parts=(name||'').trim().split(/\s+/); return ((parts[0]||'')[0]||'')+((parts[1]||'')[0]||''); }
+const AVATAR_PALETTE=['#2F6FBF','#7C4FBF','#B9791E','#3E8E5A','#C2483B','#1C6E8C'];
+function avatarColor(name){
+  let hash=0; for(let i=0;i<(name||'').length;i++){ hash=(hash*31+name.charCodeAt(i))>>>0; }
+  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
+}
+function fmtDatePT(iso){
+  const d=new Date(iso+'T00:00:00');
+  const wd=WEEKDAY_SHORT[WEEKDAYS[d.getDay()]];
+  const months=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  return wd+', '+d.getDate()+' de '+months[d.getMonth()];
+}
+const WEEKDAYS=['sun','mon','tue','wed','thu','fri','sat'];
+const WEEKDAY_LABELS={sun:'Domingo',mon:'Segunda',tue:'Terça',wed:'Quarta',thu:'Quinta',fri:'Sexta',sat:'Sábado'};
+const WEEKDAY_SHORT={sun:'dom',mon:'seg',tue:'ter',wed:'qua',thu:'qui',fri:'sex',sat:'sáb'};
+const STATUS_LABELS={marcado:'Marcado',remarcado:'Remarcado',em_atendimento:'Em atendimento',atendido:'Atendido',desmarcado:'Desmarcado'};
+
+function icon(name){
+  const paths={
+    home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/>',
+    chart:'<path d="M4 20V11M11 20V4M18 20v-6"/><path d="M2 20h20"/>',
+    calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+    users:'<circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.2 14.3c2.6.4 4.8 2.5 4.8 5.7"/>',
+    list:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.2" cy="6" r="1.2"/><circle cx="4.2" cy="12" r="1.2"/><circle cx="4.2" cy="18" r="1.2"/>',
+    settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1h-.2a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5v-.2a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    phone:'<path d="M6.6 10.8c1.3 2.6 3.4 4.7 6 6l2-2a1 1 0 0 1 1-.2c1.1.4 2.3.6 3.5.6a1 1 0 0 1 1 1v3.4a1 1 0 0 1-1 1C10.6 20.6 3.4 13.4 3.4 4.9a1 1 0 0 1 1-1H7.8a1 1 0 0 1 1 1c0 1.2.2 2.4.6 3.5a1 1 0 0 1-.2 1.1z"/>',
+    check:'<path d="M4 12l5 5 11-11"/>',
+    checkCircle:'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>',
+    x:'<path d="M5 5l14 14M19 5 5 19"/>',
+    alert:'<path d="M12 3.5 22 20H2z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/>',
+    chevronLeft:'<path d="M15 5l-7 7 7 7"/>',
+    chevronRight:'<path d="M9 5l7 7-7 7"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+    upload:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+    edit:'<path d="M4 20h4l10.5-10.5a1.8 1.8 0 0 0 0-2.5l-1.5-1.5a1.8 1.8 0 0 0-2.5 0L4 16v4z"/>',
+    trash:'<path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"/>',
+    menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+    sparkle:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+  };
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="icon">'+(paths[name]||'')+'</svg>';
+}
+function completionRing(pct){
+  const r=14, c=2*Math.PI*r;
+  const color = pct>=80?'var(--good)': pct>=40?'var(--warn)':'var(--danger)';
+  const offset = c-(pct/100)*c;
+  return '<svg viewBox="0 0 34 34" class="completion-ring"><circle cx="17" cy="17" r="'+r+'" fill="none" stroke="var(--border)" stroke-width="3.5"/><circle cx="17" cy="17" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="3.5" stroke-dasharray="'+c+'" stroke-dashoffset="'+offset+'" stroke-linecap="round" transform="rotate(-90 17 17)"/><text x="17" y="19.5" text-anchor="middle" font-size="9" font-family="IBM Plex Mono" fill="'+color+'">'+pct+'</text></svg>';
+}
+
+/* ---------- CSV parsing (quote-aware) ---------- */
+function parseCSVGeneric(text){
+  text = text.replace(/^\uFEFF/, '');
+  const firstLine = (text.split(/\r?\n/)[0] || '');
+  const delim = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+  const rows=[]; let row=[], field='', inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQuotes){
+      if(c==='"'){ if(text[i+1]==='"'){ field+='"'; i++; } else inQuotes=false; }
+      else field+=c;
+    } else {
+      if(c==='"') inQuotes=true;
+      else if(c===delim){ row.push(field); field=''; }
+      else if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(c==='\r'){ /* skip */ }
+      else field+=c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r=> r.some(v=>v.trim()!==''));
+}
+function rowsToObjects(rows){
+  const header=rows[0].map(h=>h.trim());
+  return rows.slice(1).map(r=>{ const o={}; header.forEach((h,i)=>o[h]=(r[i]||'').trim()); return o; });
+}
+function parseBRDate(s){
+  if(!s) return '';
+  const m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  return m ? (m[3]+'-'+m[2]+'-'+m[1]) : '';
+}
+function parseBRMoney(s){
+  if(!s || !s.trim()) return null;
+  const n=Number(s.trim().replace(/\./g,'').replace(',','.'));
+  return isNaN(n) ? null : n;
+}
+
+/* ---------- Patient <-> DB mapping ---------- */
+function patientToDb(p){
+  return {
+    name:p.name, phone:p.phone, cpf:p.cpf||null, birth_date:p.birthDate||null, sex:p.sex||null,
+    profession:p.profession||null, health_plan:p.healthPlan||null, cep:p.cep||null, address:p.address||null,
+    address_number:p.addressNumber||null, neighborhood:p.neighborhood||null, city:p.city||null, uf:p.uf||null,
+    referred_by:p.referredBy||null, source:p.source||'manual'
+  };
+}
+function patientFromDb(r){
+  return {id:r.id, name:r.name, phone:r.phone, cpf:r.cpf||'', birthDate:r.birth_date||'', sex:r.sex||'',
+    profession:r.profession||'', healthPlan:r.health_plan||'', cep:r.cep||'', address:r.address||'',
+    addressNumber:r.address_number||'', neighborhood:r.neighborhood||'', city:r.city||'', uf:r.uf||'',
+    referredBy:r.referred_by||'', source:r.source||'manual'};
+}
+function procedureFromDb(r){ return {id:r.id, name:r.name, category:r.category||'', duration:r.duration, price:r.price, active:r.active}; }
+function mapAppointmentFromDb(r){
+  const contact = Array.isArray(r.appointment_contacts) ? r.appointment_contacts[0] : r.appointment_contacts;
+  return {id:r.id, procedureId:r.procedure_id, professional:r.professional, date:r.date,
+    start:(r.start_time||'').slice(0,5), end:(r.end_time||'').slice(0,5), status:r.status,
+    clientName: contact?contact.client_name:'', clientPhone: contact?contact.client_phone:''};
+}
+
+/* ---------- Global state ---------- */
+let state = { professionals:[], procedures:[], patients:[], appointments:[] };
+let currentClinic=null;
+let currentSession=null;
+let publicClinicSlug=null;
+let routeMode='loading'; // loading | auth | admin | client | notfound
+let authView='login';
+let authError='';
+
+let mode='admin';
+let adminTab='inicio';
+let sidebarOpen=false;
+let patientsView='todos';
+let campaignType='retorno';
+let remarketingThreshold=60;
+let followupWindow=5;
+let birthdayWindow=7;
+let confirmWindow=2;
+let agendaDate=toISODate(new Date());
+let clientStepIdx=0;
+let clientSel={procedureId:null, professional:null, date:null, start:null, end:null};
+let pendingConfirm=null;
+let reportPeriod='month';
+const MONTHS_SHORT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const DEFAULT_AVAILABILITY={
+  sun:{enabled:false, start:'09:00', end:'18:00'},
+  mon:{enabled:true,  start:'09:00', end:'19:00'},
+  tue:{enabled:true,  start:'09:00', end:'19:00'},
+  wed:{enabled:true,  start:'09:00', end:'19:00'},
+  thu:{enabled:true,  start:'09:00', end:'19:00'},
+  fri:{enabled:true,  start:'09:00', end:'19:00'},
+  sat:{enabled:true,  start:'09:00', end:'14:00'},
+};
+const DEFAULT_CAMPAIGN_MESSAGES={
+  retorno:'Olá {nome}! Faz um tempinho que você não vem aqui na {clinica} 💆 Que tal agendar um novo horário? Você pode marcar direto por aqui: {link}',
+  posprocedimento:'Oi {nome}! Passando pra saber como você está se sentindo depois do seu procedimento na {clinica}. Qualquer coisa, é só chamar! 💛',
+  aniversario:'Feliz aniversário, {nome}! 🎉 A equipe da {clinica} deseja tudo de bom pra você!',
+  confirmacao:'Olá {nome}! Passando para confirmar seu horário de {procedimento} no dia {data} às {hora} na {clinica}. Podemos confirmar? 😊',
+};
+
+/* ---------- Boot / auth / routing ---------- */
+async function boot(){
+  try{
+    const params=new URLSearchParams(window.location.search);
+    publicClinicSlug=params.get('c');
+
+    if(publicClinicSlug){
+      const {data, error}=await sb.from('clinics').select('*').eq('slug', publicClinicSlug).single();
+      if(error || !data){ routeMode='notfound'; render(); return; }
+      currentClinic=data;
+      if(!currentClinic.availability) currentClinic.availability=DEFAULT_AVAILABILITY;
+      if(!currentClinic.campaign_messages) currentClinic.campaign_messages=DEFAULT_CAMPAIGN_MESSAGES;
+      mode='client'; clientStepIdx=0; clientSel={procedureId:null,professional:null,date:null,start:null,end:null};
+      await loadAllData();
+      routeMode='client';
+      render();
+      return;
+    }
+
+    const {data:sessionData}=await sb.auth.getSession();
+    if(sessionData && sessionData.session){
+      currentSession=sessionData.session;
+      const {data:clinicData, error}=await sb.from('clinics').select('*').eq('owner_id', currentSession.user.id).single();
+      if(clinicData){
+        currentClinic=clinicData;
+        if(!currentClinic.availability) currentClinic.availability=DEFAULT_AVAILABILITY;
+        if(!currentClinic.campaign_messages) currentClinic.campaign_messages=DEFAULT_CAMPAIGN_MESSAGES;
+        mode='admin';
+        await loadAllData();
+        routeMode='admin';
+        render();
+        return;
+      }
+    }
+    routeMode='auth';
+    render();
+  }catch(err){
+    console.error(err);
+    routeMode='booterror';
+    render();
+  }
+}
+async function loadAllData(){
+  const clinicId=currentClinic.id;
+  const isAdmin = mode==='admin';
+  const queries=[
+    sb.from('professionals').select('*').eq('clinic_id', clinicId).order('name'),
+    sb.from('procedures').select('*').eq('clinic_id', clinicId).order('name'),
+    sb.from('appointments').select('*, appointment_contacts(client_name, client_phone, patient_id)').eq('clinic_id', clinicId).order('date').order('start_time'),
+  ];
+  if(isAdmin) queries.push(sb.from('patients').select('*').eq('clinic_id', clinicId).order('name'));
+  const results=await Promise.all(queries);
+  state.professionals=(results[0].data||[]).map(r=>({id:r.id, name:r.name}));
+  state.procedures=(results[1].data||[]).map(procedureFromDb);
+  state.appointments=(results[2].data||[]).map(mapAppointmentFromDb);
+  state.patients = isAdmin ? (results[3].data||[]).map(patientFromDb) : [];
+}
+
+/* ---------- Domain logic ---------- */
+function completionScore(p){
+  const fields=[p.cpf,p.birthDate,p.sex,p.profession,p.healthPlan,p.cep];
+  const filled=fields.filter(v=>v && String(v).trim()!=='').length;
+  return Math.round((filled/fields.length)*100);
+}
+function computePendencies(){
+  const items=[];
+  const noCpf=state.patients.filter(p=>!p.cpf).length;
+  const noBirth=state.patients.filter(p=>!p.birthDate).length;
+  const noPlan=state.patients.filter(p=>!p.healthPlan).length;
+  const noDuration=state.procedures.filter(p=>!p.duration).length;
+  const noPrice=state.procedures.filter(p=>p.price==null).length;
+  if(noCpf) items.push(noCpf+' paciente(s) sem CPF cadastrado');
+  if(noBirth) items.push(noBirth+' paciente(s) sem data de nascimento');
+  if(noPlan) items.push(noPlan+' paciente(s) sem plano de saúde informado');
+  if(noDuration) items.push(noDuration+' procedimento(s) sem duração definida (não aparecem pro cliente agendar)');
+  if(noPrice) items.push(noPrice+' procedimento(s) sem preço definido');
+  return items;
+}
+function currentProfessional(){ return clientSel.professional || (state.professionals[0] && state.professionals[0].name) || null; }
+function getSlots(dateISO, durationMin, professional){
+  const d=new Date(dateISO+'T00:00:00');
+  const wd=WEEKDAYS[d.getDay()];
+  const cfg=currentClinic.availability[wd];
+  if(!cfg || !cfg.enabled) return [];
+  const openMin=timeToMin(cfg.start), closeMin=timeToMin(cfg.end);
+  const busy=state.appointments.filter(a=>a.date===dateISO && a.status!=='desmarcado' && (a.professional||null)===(professional||null))
+    .map(a=>({start:timeToMin(a.start), end:timeToMin(a.end)}));
+  const now=new Date();
+  const isToday = dateISO===toISODate(now);
+  const nowMin = now.getHours()*60+now.getMinutes();
+  const slots=[];
+  for(let t=openMin; t+durationMin<=closeMin; t+=15){
+    if(isToday && t<=nowMin+15) continue;
+    const overlap=busy.some(b=> t<b.end && b.start<t+durationMin);
+    if(overlap) continue;
+    slots.push({start:minToTime(t), end:minToTime(t+durationMin)});
+  }
+  return slots;
+}
+async function upsertPatient(name,phone,source){
+  const clean=(phone||'').replace(/\D/g,'');
+  const existing = clean ? state.patients.find(p=>p.phone.replace(/\D/g,'')===clean) : null;
+  if(existing){
+    existing.name=name;
+    await sb.from('patients').update({name}).eq('id', existing.id);
+    return existing.id;
+  }
+  const {data,error}=await sb.from('patients').insert(Object.assign({clinic_id:currentClinic.id}, patientToDb({name,phone,source}))).select().single();
+  if(error){ console.error(error); return null; }
+  state.patients.push(patientFromDb(data));
+  return data.id;
+}
+async function createAppointment(procId,dateISO,start,end,professional,name,phone){
+  const {data:apptRow, error}=await sb.from('appointments').insert({
+    clinic_id:currentClinic.id, procedure_id:procId, professional:professional||null,
+    date:dateISO, start_time:start, end_time:end, status:'marcado'
+  }).select().single();
+  if(error){ throw error; }
+  const patientId=await upsertPatient(name,phone,'agendamento');
+  await sb.from('appointment_contacts').insert({appointment_id:apptRow.id, patient_id:patientId, client_name:name, client_phone:phone});
+  state.appointments.push({id:apptRow.id, procedureId:procId, date:dateISO, start, end, professional:professional||null, clientName:name, clientPhone:phone, status:'marcado'});
+}
+const STANDARD_PROCEDURES=[
+  {name:'Avaliação', duration:40},
+  {name:'Criolipólise', duration:60},
+  {name:'Endolaser', duration:45},
+  {name:'Drenagem linfática', duration:50},
+  {name:'Radiofrequência', duration:40},
+  {name:'Peeling corporal', duration:40},
+  {name:'Microagulhamento', duration:40},
+  {name:'Massagem modeladora', duration:50},
+  {name:'Pós-operatório', duration:40},
+  {name:'Ventosaterapia', duration:40},
+];
+async function loadStandardProcedures(){
+  let added=0, skipped=0;
+  const toInsert=[];
+  STANDARD_PROCEDURES.forEach(sp=>{
+    const exists=state.procedures.some(p=>p.name.toLowerCase()===sp.name.toLowerCase());
+    if(exists){ skipped++; return; }
+    toInsert.push({clinic_id:currentClinic.id, name:sp.name, duration:sp.duration, price:null, active:true});
+  });
+  if(toInsert.length){
+    const {data,error}=await sb.from('procedures').insert(toInsert).select();
+    if(!error && data){ data.forEach(r=>state.procedures.push(procedureFromDb(r))); added=data.length; }
+  }
+  return {added, skipped};
+}
+function toWhatsAppNumber(phone){
+  let d=(phone||'').replace(/\D/g,'');
+  if(d.length===11 || d.length===10){ d='55'+d; }
+  return d;
+}
+function buildWhatsAppLink(phone, message){
+  const num=toWhatsAppNumber(phone);
+  return message ? ('https://wa.me/'+num+'?text='+encodeURIComponent(message)) : ('https://wa.me/'+num);
+}
+function firstName(name){ return (name||'').trim().split(/\s+/)[0] || name || ''; }
+function fillTemplate(tpl, vars){
+  let out=tpl||'';
+  Object.keys(vars).forEach(k=>{ out=out.split('{'+k+'}').join(vars[k]!=null?String(vars[k]):''); });
+  return out;
+}
+function lastVisitDate(patient){
+  const clean=(patient.phone||'').replace(/\D/g,'');
+  if(!clean) return null;
+  const visits=state.appointments.filter(a=>a.status==='atendido' && (a.clientPhone||'').replace(/\D/g,'')===clean);
+  if(visits.length===0) return null;
+  return visits.reduce((max,a)=> a.date>max?a.date:max, visits[0].date);
+}
+function daysSince(dateISO){
+  const d=new Date(dateISO+'T00:00:00');
+  const now=new Date();
+  return Math.floor((now-d)/(1000*60*60*24));
+}
+function stripTime(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function campaignRetorno(){
+  return state.patients.map(p=>{
+    const last=lastVisitDate(p);
+    return {patient:p, last, days: last?daysSince(last):null};
+  }).filter(r=>r.last!==null && r.days>=remarketingThreshold).sort((a,b)=>b.days-a.days);
+}
+function campaignPosProcedimento(){
+  return state.patients.map(p=>{
+    const last=lastVisitDate(p);
+    return {patient:p, last, days: last?daysSince(last):null};
+  }).filter(r=>r.last!==null && r.days>=1 && r.days<=followupWindow).sort((a,b)=>a.days-b.days);
+}
+function campaignAniversario(){
+  const today=stripTime(new Date());
+  const results=[];
+  state.patients.forEach(p=>{
+    if(!p.birthDate) return;
+    const bd=new Date(p.birthDate+'T00:00:00');
+    let next=new Date(today.getFullYear(), bd.getMonth(), bd.getDate());
+    if(next<today) next=new Date(today.getFullYear()+1, bd.getMonth(), bd.getDate());
+    const diffDays=Math.round((next-today)/(1000*60*60*24));
+    if(diffDays<=birthdayWindow) results.push({patient:p, diffDays});
+  });
+  return results.sort((a,b)=>a.diffDays-b.diffDays);
+}
+function campaignConfirmacao(){
+  const todayISO=toISODate(new Date());
+  const end=new Date(); end.setDate(end.getDate()+confirmWindow-1);
+  const endISO=toISODate(end);
+  return state.appointments.filter(a=>a.date>=todayISO && a.date<=endISO && (a.status==='marcado'||a.status==='remarcado'))
+    .sort((a,b)=> a.date===b.date ? timeToMin(a.start)-timeToMin(b.start) : (a.date<b.date?-1:1));
+}
+
+/* ---------- Imports ---------- */
+async function importPatientsCSV(text){
+  const rows=parseCSVGeneric(text);
+  if(rows.length<2) return {added:0, updated:0, error:true};
+  const header=rows[0].map(h=>h.trim());
+  const phoneKey=header.find(h=>/telefone/i.test(h));
+  const rich=header.includes('Nome') && !!phoneKey;
+  const newOnes=[]; const updates=[];
+  if(rich){
+    rowsToObjects(rows).forEach(o=>{
+      const name=o['Nome']||''; if(!name) return;
+      const phone=(o[phoneKey]||'').trim();
+      const clean=phone.replace(/\D/g,'');
+      const existing=clean ? state.patients.find(p=>p.phone.replace(/\D/g,'')===clean) : null;
+      const local={ name, phone, cpf:o['CPF']||'', birthDate:parseBRDate(o['Nascimento']), sex:o['Sexo']||'',
+        profession:o['Profissão']||'', healthPlan:o['Plano de saúde']||'', cep:o['CEP']||'',
+        address:o['Logradouro']||'', addressNumber:o['N. End.']||'', neighborhood:o['Bairro']||'',
+        city:o['Cidade']||'', uf:o['UF']||'', referredBy:o['Indicado por']||'', source: existing?existing.source:'importado' };
+      if(existing){ updates.push({id:existing.id, local}); } else { newOnes.push(local); }
+    });
+  } else {
+    const startIdx=/nome|telefone|phone|name/i.test(rows[0].join(' '))?1:0;
+    for(let i=startIdx;i<rows.length;i++){
+      const r=rows[i]; const name=(r[0]||'').trim(), phone=(r[1]||'').trim();
+      const clean=phone.replace(/\D/g,'');
+      if(!clean) continue;
+      const existing=state.patients.find(p=>p.phone.replace(/\D/g,'')===clean);
+      if(existing){ updates.push({id:existing.id, local:{name}}); }
+      else{ newOnes.push({name, phone, source:'importado'}); }
+    }
+  }
+  let added=0, updated=0;
+  if(newOnes.length){
+    const payload=newOnes.map(l=>Object.assign({clinic_id:currentClinic.id}, patientToDb(l)));
+    const {data,error}=await sb.from('patients').insert(payload).select();
+    if(!error && data){ data.forEach(r=>state.patients.push(patientFromDb(r))); added=data.length; }
+  }
+  for(const u of updates){
+    const merged=Object.assign({}, state.patients.find(p=>p.id===u.id), u.local);
+    await sb.from('patients').update(patientToDb(merged)).eq('id', u.id);
+    Object.assign(state.patients.find(p=>p.id===u.id), u.local);
+    updated++;
+  }
+  return {added, updated};
+}
+async function importProceduresCSV(text){
+  const rows=parseCSVGeneric(text);
+  if(rows.length<2) return {added:0, updated:0, error:true};
+  const header=rows[0].map(h=>h.trim());
+  const newOnes=[]; const updates=[];
+  if(!header.includes('Procedimento')){
+    const startIdx=/procedimento|nome/i.test(rows[0].join(' '))?1:0;
+    for(let i=startIdx;i<rows.length;i++){
+      const name=(rows[i][0]||'').trim(); if(!name) continue;
+      const price=parseBRMoney(rows[i][1]);
+      if(state.procedures.some(p=>p.name.toLowerCase()===name.toLowerCase())) continue;
+      newOnes.push({name, price, duration:null, active:true, category:null});
+    }
+  } else {
+    rowsToObjects(rows).forEach(o=>{
+      const name=(o['Procedimento']||'').trim(); if(!name) return;
+      const price=parseBRMoney(o['Preço']||'');
+      const category=(o['Especialidade']||'').trim();
+      const existing=state.procedures.find(p=>p.name.toLowerCase()===name.toLowerCase());
+      if(existing){ updates.push({id:existing.id, price, category}); }
+      else{ newOnes.push({name, price, category, duration:null, active:true}); }
+    });
+  }
+  let added=0, updated=0;
+  if(newOnes.length){
+    const payload=newOnes.map(p=>Object.assign({clinic_id:currentClinic.id}, p));
+    const {data,error}=await sb.from('procedures').insert(payload).select();
+    if(!error && data){ data.forEach(r=>state.procedures.push(procedureFromDb(r))); added=data.length; }
+  }
+  for(const u of updates){
+    await sb.from('procedures').update({price:u.price, category:u.category}).eq('id', u.id);
+    const local=state.procedures.find(p=>p.id===u.id); local.price=u.price; local.category=u.category;
+    updated++;
+  }
+  return {added, updated};
+}
+
+/* ---------- Toast / modal ---------- */
+function showToast(msg){
+  const el=document.createElement('div'); el.className='toast'; el.textContent=msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),300); }, 3400);
+}
+function openModal(html){ document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div class="modal-card">'+html+'</div></div>'; }
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+function confirmModal(message, onConfirm){
+  openModal('<p>'+message+'</p><div class="modal-actions"><button id="confirm-no" class="ghost-btn">Cancelar</button><button id="confirm-yes" class="btn-danger-solid">Confirmar</button></div>');
+  pendingConfirm=onConfirm;
+}
+
+/* ---------- Render: dashboard ---------- */
+function renderDashboard(){
+  if(state.patients.length===0 && state.procedures.length===0){
+    return '<div class="welcome-card">'+icon('sparkle')+'<h2 style="margin-top:10px;">Vamos começar</h2>'
+      +'<p class="hint">Importe os pacientes e procedimentos da clínica pra já ver o painel funcionando com dados reais.</p>'
+      +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">'
+      +'<button class="btn-primary" data-admintab="pacientes">'+icon('users')+' Importar pacientes</button>'
+      +'<button class="btn-primary" data-admintab="procedimentos">'+icon('list')+' Importar procedimentos</button>'
+      +'</div></div>';
+  }
+  const todayISO=toISODate(new Date());
+  const todayCount=state.appointments.filter(a=>a.date===todayISO && a.status!=='desmarcado').length;
+  const totalPatients=state.patients.length;
+  const incomplete=state.patients.filter(p=>completionScore(p)<60).length;
+  const readyProcs=state.procedures.filter(p=>p.active && p.duration).length;
+  const pend=computePendencies();
+
+  const monthRange=periodRange('month');
+  const inMonth=state.appointments.filter(a=>a.date>=monthRange.start && a.date<=monthRange.end);
+  const atendidosMonth=inMonth.filter(a=>a.status==='atendido');
+  const desmarcadosMonth=inMonth.filter(a=>a.status==='desmarcado');
+  const realizedMonth=atendidosMonth.reduce((s,a)=>s+procPrice(a.procedureId),0);
+  const avgTicketMonth=atendidosMonth.length ? realizedMonth/atendidosMonth.length : 0;
+  const attTotalMonth=atendidosMonth.length+desmarcadosMonth.length;
+  const attRateMonth=attTotalMonth ? Math.round((atendidosMonth.length/attTotalMonth)*100) : null;
+
+  const next7=upcomingAppointments(7);
+  const next30Count=upcomingAppointments(30).length;
+  const procRankingMonth=topProcedures(monthRange);
+
+  return renderHeroToday()
+    +'<div class="kpi-grid">'
+    +kpiCard('calendar', todayCount, 'Agendamentos hoje', '#2F6FBF')
+    +kpiCard('users', totalPatients, 'Pacientes cadastrados', '#7C4FBF')
+    +kpiCard('alert', incomplete, 'Cadastros incompletos', '#C2483B')
+    +kpiCard('list', readyProcs, 'Procedimentos prontos p/ agendar', '#B9791E')
+    +'</div>'
+    +'<div class="pend-card"><h3>'+icon('alert')+' Pendências</h3>'
+    +(pend.length ? '<ul>'+pend.map(t=>'<li>'+t+'</li>').join('')+'</ul>' : '<p class="ok-note">Tudo certo por aqui ✓</p>')
+    +'</div>'
+    +'<div class="report-card"><h3>Este mês</h3>'
+    +'<div class="kpi-grid">'
+    +kpiCard('checkCircle', fmtMoney(realizedMonth), 'Faturamento realizado', '#3E8E5A')
+    +kpiCard('checkCircle', atendidosMonth.length, 'Atendimentos realizados', '#B9791E')
+    +kpiCard('sparkle', fmtMoney(avgTicketMonth), 'Ticket médio', '#2F6FBF')
+    +kpiCard('alert', (attRateMonth==null?'—':attRateMonth+'%'), 'Taxa de comparecimento', '#7C4FBF')
+    +'</div></div>'
+    +'<div class="report-card"><div class="section-head" style="margin-bottom:2px;"><h3>Próximos agendamentos</h3>'
+    +'<span class="hint">'+next7.length+' nos próximos 7 dias · '+next30Count+' no próximo mês</span></div>'
+    +'<div class="appt-list" style="margin-top:12px;">'+(next7.length ? renderUpcomingRows(next7.slice(0,8)) : '<p class="empty-note">Nenhum agendamento nos próximos 7 dias.</p>')+'</div></div>'
+    +'<div class="report-card"><h3>Procedimentos mais atendidos este mês</h3>'+renderRanking(procRankingMonth)+'</div>';
+}
+function upcomingAppointments(days){
+  const todayISO=toISODate(new Date());
+  const end=new Date(); end.setDate(end.getDate()+days-1);
+  const endISO=toISODate(end);
+  return state.appointments.filter(a=>a.date>=todayISO && a.date<=endISO && (a.status==='marcado'||a.status==='remarcado'||a.status==='em_atendimento'))
+    .sort((a,b)=> a.date===b.date ? timeToMin(a.start)-timeToMin(b.start) : (a.date<b.date?-1:1));
+}
+function renderUpcomingRows(items){
+  return items.map(a=>{
+    const proc=state.procedures.find(p=>p.id===a.procedureId);
+    return '<div class="appt-card" data-apptid="'+a.id+'">'
+      +'<div class="appt-time">'+a.start+'</div>'
+      +'<div class="appt-info"><div class="appt-name">'+escapeHTML(a.clientName)+'</div>'
+      +'<div class="appt-meta">'+fmtDatePT(a.date)+' · '+(proc?escapeHTML(proc.name):'—')+'</div></div>'
+      +'<span class="status-pill status-'+a.status+'">'+STATUS_LABELS[a.status]+'</span>'
+      +'</div>';
+  }).join('');
+}
+function kpiCard(ic,value,label,accent){
+  const acc=accent||'#1C6E8C';
+  return '<div class="kpi-card" style="--kpi-accent:'+acc+';--kpi-tint:'+acc+'26"><div class="kpi-icon">'+icon(ic)+'</div><div class="kpi-value">'+value+'</div><div class="kpi-label">'+label+'</div></div>';
+}
+function todayOccupancy(){
+  const iso=toISODate(new Date());
+  const wd=WEEKDAYS[new Date(iso+'T00:00:00').getDay()];
+  const cfg=currentClinic.availability[wd];
+  if(!cfg || !cfg.enabled) return null;
+  const openMin=timeToMin(cfg.start), closeMin=timeToMin(cfg.end);
+  const profCount=Math.max(1, state.professionals.length);
+  const totalCapacity=(closeMin-openMin)*profCount;
+  const bookedMin=state.appointments.filter(a=>a.date===iso && a.status!=='desmarcado')
+    .reduce((sum,a)=>sum+(timeToMin(a.end)-timeToMin(a.start)),0);
+  const pct=totalCapacity>0 ? Math.min(100, Math.round((bookedMin/totalCapacity)*100)) : 0;
+  return {pct};
+}
+function renderHeroToday(){
+  const occ=todayOccupancy();
+  const todayISO=toISODate(new Date());
+  const todayAppts=state.appointments.filter(a=>a.date===todayISO && a.status!=='desmarcado');
+  const done=todayAppts.filter(a=>a.status==='atendido').length;
+  const cancelled=state.appointments.filter(a=>a.date===todayISO && a.status==='desmarcado').length;
+  if(!occ){
+    return '<div class="hero-card hero-closed"><div class="hero-text"><span class="hero-eyebrow">Hoje</span><h2>A clínica não abre hoje</h2><p class="hint" style="color:rgba(255,255,255,.8)">Ajuste os horários em Disponibilidade se precisar.</p></div></div>';
+  }
+  const r=52, c=2*Math.PI*r;
+  const offset=c-(occ.pct/100)*c;
+  return '<div class="hero-card">'
+    +'<div class="hero-gauge"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="'+r+'" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="9"/>'
+    +'<circle class="gauge-arc" cx="60" cy="60" r="'+r+'" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+c+'" stroke-dashoffset="'+c+'" data-target-offset="'+offset+'" transform="rotate(-90 60 60)"/></svg>'
+    +'<div class="hero-gauge-label"><span data-count-to="'+occ.pct+'">0</span>%</div></div>'
+    +'<div class="hero-text"><span class="hero-eyebrow">Ocupação de hoje</span><h2>'+todayAppts.length+' agendamento(s) hoje</h2>'
+    +'<div class="hero-stats"><span>'+done+' atendidos</span><span>'+cancelled+' cancelados</span></div></div>'
+    +'</div>';
+}
+
+/* ---------- Render: agenda ---------- */
+function renderAgendaTab(){
+  const d0=new Date(agendaDate+'T00:00:00');
+  const strip=[];
+  for(let i=-3;i<=3;i++){
+    const d=new Date(d0); d.setDate(d0.getDate()+i);
+    const iso=toISODate(d);
+    strip.push('<button class="date-cell '+(iso===agendaDate?'active':'')+'" data-pickdate="'+iso+'"><div class="dow">'+WEEKDAY_SHORT[WEEKDAYS[d.getDay()]]+'</div><div class="dnum">'+d.getDate()+'</div></button>');
+  }
+  const nav='<div class="date-strip"><button class="date-nav-btn" data-shiftweek="-7">'+icon('chevronLeft')+'</button><div class="date-strip-scroll">'+strip.join('')+'</div><button class="date-nav-btn" data-shiftweek="7">'+icon('chevronRight')+'</button></div>';
+  const addBtn='<div class="section-head" style="justify-content:flex-end;margin-bottom:4px;"><button class="btn-primary" id="newApptBtn">'+icon('plus')+' Novo agendamento</button></div>';
+
+  const wd=WEEKDAYS[d0.getDay()];
+  const cfg=currentClinic.availability[wd];
+  const dayAppts=state.appointments.filter(a=>a.date===agendaDate && a.status!=='desmarcado').sort((a,b)=>timeToMin(a.start)-timeToMin(b.start));
+  const cards=dayAppts.map(a=>{
+    const proc=state.procedures.find(p=>p.id===a.procedureId);
+    const waMsg=fillTemplate(currentClinic.campaign_messages.confirmacao, {nome:firstName(a.clientName), clinica:currentClinic.name, procedimento:(proc?proc.name:'atendimento'), data:fmtDatePT(a.date), hora:a.start});
+    const waBtn=a.clientPhone ? ('<a class="wa-icon-btn" href="'+buildWhatsAppLink(a.clientPhone, waMsg)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Confirmar pelo WhatsApp">'+icon('phone')+'</a>') : '';
+    return '<div class="appt-card" data-apptid="'+a.id+'">'
+      +'<div class="appt-time">'+a.start+'</div>'
+      +'<div class="appt-info"><div class="appt-name">'+escapeHTML(a.clientName)+'</div>'
+      +'<div class="appt-meta">'+(proc?escapeHTML(proc.name):'Procedimento removido')+(a.professional?' · '+escapeHTML(a.professional):'')+'</div></div>'
+      +waBtn
+      +'<span class="status-pill status-'+a.status+'">'+STATUS_LABELS[a.status]+'</span>'
+      +'</div>';
+  }).join('');
+  const dayLabel='<p class="hint">'+fmtDatePT(agendaDate)+(cfg&&cfg.enabled?' · '+cfg.start+'–'+cfg.end:' · fechado')+'</p>';
+  return addBtn+nav+dayLabel+'<div class="appt-list">'+(cards || '<p class="empty-note">Nenhum horário marcado neste dia.</p>')+'</div>';
+}
+function apptDetailModal(appt){
+  const proc=state.procedures.find(p=>p.id===appt.procedureId);
+  const statusOpts=Object.keys(STATUS_LABELS).map(k=>'<option value="'+k+'" '+(appt.status===k?'selected':'')+'>'+STATUS_LABELS[k]+'</option>').join('');
+  const waMsg=fillTemplate(currentClinic.campaign_messages.confirmacao, {nome:firstName(appt.clientName), clinica:currentClinic.name, procedimento:(proc?proc.name:'atendimento'), data:fmtDatePT(appt.date), hora:appt.start});
+  const waBtn=appt.clientPhone ? ('<a class="btn-primary whatsapp-btn pill-cta" href="'+buildWhatsAppLink(appt.clientPhone, waMsg)+'" target="_blank" rel="noopener">'+icon('phone')+' Confirmar pelo WhatsApp</a>') : '';
+  return '<h3>'+escapeHTML(appt.clientName)+'</h3>'
+    +'<p class="hint">'+fmtDatePT(appt.date)+' · '+appt.start+'–'+appt.end+'</p>'
+    +'<p class="hint">'+(proc?escapeHTML(proc.name):'Procedimento removido')+(appt.professional?' · '+escapeHTML(appt.professional):'')+'</p>'
+    +'<p class="hint">'+icon('phone')+' '+escapeHTML(appt.clientPhone||'—')+'</p>'
+    +waBtn
+    +'<label style="margin-top:14px;">Situação<select id="appt-status">'+statusOpts+'</select></label>'
+    +'<input type="hidden" id="appt-id" value="'+appt.id+'">'
+    +'<div class="modal-actions"><button id="appt-delete" class="btn-danger">'+icon('trash')+' Excluir</button><button id="appt-cancel" class="ghost-btn">Fechar</button><button id="appt-save" class="btn-primary">Salvar</button></div>';
+}
+function newAppointmentForm(){
+  const procOptions=state.procedures.map(p=>'<option value="'+p.id+'" data-duration="'+(p.duration||'')+'">'+escapeHTML(p.name)+(p.duration?(' ('+p.duration+' min)'):'')+'</option>').join('');
+  const profOptions=state.professionals.map(p=>'<option value="'+escapeHTML(p.name)+'">'+escapeHTML(p.name)+'</option>').join('');
+  const statusOptions=Object.keys(STATUS_LABELS).map(k=>'<option value="'+k+'" '+(k==='marcado'?'selected':'')+'>'+STATUS_LABELS[k]+'</option>').join('');
+  const patientOptions=state.patients.map(p=>'<option value="'+escapeHTML(p.name)+'">').join('');
+  const firstProc=state.procedures[0];
+  return '<h3>Novo agendamento</h3>'
+    +'<p class="hint">Pra marcar presencialmente ou já deixar um retorno agendado.</p>'
+    +'<label>Paciente<input type="text" id="na-name" list="na-patientlist" placeholder="Nome do paciente" autocomplete="off"></label>'
+    +'<datalist id="na-patientlist">'+patientOptions+'</datalist>'
+    +'<label>Telefone<input type="tel" id="na-phone" placeholder="(71) 99999-9999"></label>'
+    +'<label>Procedimento<select id="na-procedure">'+(procOptions || '<option value="">Nenhum procedimento cadastrado</option>')+'</select></label>'
+    +(state.professionals.length ? '<label>Profissional<select id="na-professional">'+profOptions+'</select></label>' : '')
+    +'<label>Data<input type="date" id="na-date" value="'+agendaDate+'"></label>'
+    +'<label>Horário<input type="time" id="na-time"></label>'
+    +'<label>Duração (min)<input type="number" id="na-duration" min="5" step="5" value="'+(firstProc && firstProc.duration ? firstProc.duration : '')+'"></label>'
+    +'<label>Situação<select id="na-status">'+statusOptions+'</select></label>'
+    +'<p class="form-error" id="na-error"></p>'
+    +'<div class="modal-actions"><button id="na-cancel" class="ghost-btn">Cancelar</button><button id="na-save" class="btn-primary">Salvar</button></div>';
+}
+
+/* ---------- Render: procedures ---------- */
+function renderProceduresTab(){
+  const cards=state.procedures.map(p=>{
+    const meta = p.duration ? (p.duration+' min · '+fmtMoney(p.price)) : fmtMoney(p.price);
+    const warn = !p.duration ? '<span class="warn-chip">'+icon('alert')+' Defina a duração</span>' : (p.price==null ? '<span class="warn-chip">'+icon('alert')+' Sem preço</span>' : '');
+    return '<div class="proc-card2 '+(p.active?'':'inactive')+'">'
+      +'<div class="proc-top"><div class="proc-icon">'+icon('list')+'</div>'
+      +'<label class="switch"><input type="checkbox" data-proctoggle="'+p.id+'" '+(p.active?'checked':'')+'> Ativo</label></div>'
+      +'<div class="proc-name2">'+escapeHTML(p.name)+'</div>'
+      +'<div class="proc-meta2">'+meta+(p.category?' · '+escapeHTML(p.category):'')+'</div>'
+      +warn
+      +'<div class="proc-actions2"><button data-procedit="'+p.id+'">'+icon('edit')+' Editar</button><button data-procdel="'+p.id+'">'+icon('trash')+' Excluir</button></div>'
+      +'</div>';
+  }).join('');
+  return '<div class="section-head"><h2>Procedimentos</h2><div>'
+    +'<button class="ghost-btn" id="loadStandardProcBtn">'+icon('sparkle')+' Lista padrão</button>'
+    +'<button class="ghost-btn" id="showProcTemplateBtn">'+icon('search')+' Ver formatos aceitos</button>'
+    +'<label class="file-btn">'+icon('upload')+' Importar CSV<input type="file" id="csvProcInput" accept=".csv,text/csv" style="display:none"></label>'
+    +'<button class="btn-primary" id="addProcBtn">'+icon('plus')+' Novo procedimento</button>'
+    +'</div></div>'
+    +'<p class="hint">Só procedimentos ativos e com duração definida aparecem para o cliente agendar.</p>'
+    +'<div class="proc-grid-admin">'+(cards || '<p class="empty-note">Nenhum procedimento cadastrado ainda.</p>')+'</div>';
+}
+function procForm(existing){
+  const p=existing || {id:'',name:'',duration:'',price:''};
+  return '<h3>'+(existing?'Editar procedimento':'Novo procedimento')+'</h3>'
+    +'<label>Nome<input type="text" id="pf-name" value="'+escapeHTML(p.name)+'"></label>'
+    +'<label>Duração (min)<input type="number" id="pf-duration" value="'+(p.duration||'')+'" min="5" step="5" placeholder="ex: 40"></label>'
+    +'<label>Preço (R$)<input type="number" id="pf-price" value="'+(p.price==null?'':p.price)+'" min="0" step="0.01"></label>'
+    +'<p class="form-error" id="pf-error"></p>'
+    +'<input type="hidden" id="pf-id" value="'+(p.id||'')+'">'
+    +'<div class="modal-actions"><button id="pf-cancel" class="ghost-btn">Cancelar</button><button id="pf-save" class="btn-primary">Salvar</button></div>';
+}
+
+/* ---------- Render: availability ---------- */
+/* renderAvailabilityTab foi incorporada em renderSettingsTab (Ajustes) */
+
+/* ---------- Render: patients ---------- */
+function renderPatientsTab(){
+  const viewToggle='<div class="period-tabs" style="margin-bottom:16px;">'
+    +'<button class="period-btn '+(patientsView==='todos'?'active':'')+'" data-patientsview="todos">Todos</button>'
+    +'<button class="period-btn '+(patientsView==='campanhas'?'active':'')+'" data-patientsview="campanhas">Campanhas</button>'
+    +'</div>';
+  if(patientsView==='campanhas') return viewToggle+renderCampaignsView();
+  return viewToggle+'<div class="section-head"><h2>Pacientes</h2><div>'
+    +'<button class="ghost-btn" id="showPatTemplateBtn">'+icon('search')+' Ver formatos aceitos</button>'
+    +'<label class="file-btn">'+icon('upload')+' Importar CSV<input type="file" id="csvPatInput" accept=".csv,text/csv" style="display:none"></label>'
+    +'<button class="btn-primary" id="addPatientBtn">'+icon('plus')+' Adicionar paciente</button>'
+    +'</div></div>'
+    +'<input type="text" id="patientSearch" placeholder="Buscar por nome ou telefone" class="search-input">'
+    +'<div class="patient-list" id="patientList">'+renderPatientRows(state.patients)+'</div>';
+}
+function campaignMessageEditor(type, hint){
+  return '<label style="margin-top:14px;">Mensagem ('+hint+')<textarea class="campaign-msg-input" data-campaignmsg="'+type+'" rows="3">'+escapeHTML(currentClinic.campaign_messages[type])+'</textarea></label>'
+    +'<button class="ghost-btn" data-savecampaignmsg="'+type+'">Salvar mensagem</button>';
+}
+function campaignPatientRow(patient, metaText, message){
+  const c=avatarColor(patient.name);
+  const waBtn=patient.phone ? ('<a class="btn-primary whatsapp-btn" href="'+buildWhatsAppLink(patient.phone, message)+'" target="_blank" rel="noopener">'+icon('phone')+' Chamar</a>') : '<span class="hint">Sem telefone</span>';
+  return '<div class="patient-card">'
+    +'<div class="avatar" style="background:'+c+'22;color:'+c+'">'+escapeHTML(initials(patient.name).toUpperCase())+'</div>'
+    +'<div class="patient-info"><div class="patient-name">'+escapeHTML(patient.name)+'</div><div class="patient-meta">'+metaText+'</div></div>'
+    +waBtn+'</div>';
+}
+function renderCampaignsView(){
+  const types=[['retorno','Retorno'],['posprocedimento','Pós-procedimento'],['aniversario','Aniversário'],['confirmacao','Confirmação']];
+  const typeTabs=types.map(([k,label])=>'<button class="period-btn '+(campaignType===k?'active':'')+'" data-campaigntype="'+k+'">'+label+'</button>').join('');
+  const body = campaignType==='posprocedimento' ? renderCampaignPos()
+    : campaignType==='aniversario' ? renderCampaignAniversario()
+    : campaignType==='confirmacao' ? renderCampaignConfirmacao()
+    : renderCampaignRetorno();
+  return '<div class="period-tabs" style="margin-bottom:16px;flex-wrap:wrap;">'+typeTabs+'</div>'+body;
+}
+function renderCampaignRetorno(){
+  const rows=campaignRetorno();
+  const thresholdBtns=[30,60,90,180].map(n=>'<button class="period-btn '+(remarketingThreshold===n?'active':'')+'" data-threshold="'+n+'">'+n+'+ dias</button>').join('');
+  const list=rows.map(r=>{
+    const msg=fillTemplate(currentClinic.campaign_messages.retorno, {nome:firstName(r.patient.name), clinica:currentClinic.name, link: currentClinic.booking_link || '[link de agendamento]'});
+    return campaignPatientRow(r.patient, 'Última visita: '+fmtDatePT(r.last)+' · '+r.days+' dias sem voltar', msg);
+  }).join('');
+  return '<p class="hint">Pacientes que já foram atendidos, mas não voltam há um tempo.</p>'
+    +'<div class="period-tabs" style="margin:14px 0;">'+thresholdBtns+'</div>'
+    +campaignMessageEditor('retorno', 'use {nome}, {clinica} e {link}')
+    +'<h3 style="margin-top:24px;">'+rows.length+' paciente(s) nessa faixa</h3>'
+    +'<div class="patient-list">'+(list || '<p class="empty-note">Ninguém nessa faixa por enquanto.</p>')+'</div>';
+}
+function renderCampaignPos(){
+  const rows=campaignPosProcedimento();
+  const windowBtns=[3,5,7,14].map(n=>'<button class="period-btn '+(followupWindow===n?'active':'')+'" data-followup="'+n+'">até '+n+'d</button>').join('');
+  const list=rows.map(r=>{
+    const msg=fillTemplate(currentClinic.campaign_messages.posprocedimento, {nome:firstName(r.patient.name), clinica:currentClinic.name});
+    return campaignPatientRow(r.patient, 'Atendido em '+fmtDatePT(r.last)+' · há '+r.days+' dia(s)', msg);
+  }).join('');
+  return '<p class="hint">Pacientes atendidos recentemente — bom momento pra saber como estão se sentindo.</p>'
+    +'<div class="period-tabs" style="margin:14px 0;">'+windowBtns+'</div>'
+    +campaignMessageEditor('posprocedimento','use {nome} e {clinica}')
+    +'<h3 style="margin-top:24px;">'+rows.length+' paciente(s)</h3>'
+    +'<div class="patient-list">'+(list || '<p class="empty-note">Ninguém nesse recorte agora.</p>')+'</div>';
+}
+function renderCampaignAniversario(){
+  const rows=campaignAniversario();
+  const windowBtns=[7,15,30].map(n=>'<button class="period-btn '+(birthdayWindow===n?'active':'')+'" data-birthday="'+n+'">próximos '+n+'d</button>').join('');
+  const list=rows.map(r=>{
+    const msg=fillTemplate(currentClinic.campaign_messages.aniversario, {nome:firstName(r.patient.name), clinica:currentClinic.name});
+    const when = r.diffDays===0 ? 'hoje!' : ('em '+r.diffDays+' dia(s)');
+    return campaignPatientRow(r.patient, 'Aniversário '+when, msg);
+  }).join('');
+  return '<p class="hint">Pacientes com aniversário chegando, com base na data de nascimento cadastrada.</p>'
+    +'<div class="period-tabs" style="margin:14px 0;">'+windowBtns+'</div>'
+    +campaignMessageEditor('aniversario','use {nome} e {clinica}')
+    +'<h3 style="margin-top:24px;">'+rows.length+' paciente(s)</h3>'
+    +'<div class="patient-list">'+(list || '<p class="empty-note">Nenhum aniversário nesse período.</p>')+'</div>';
+}
+function renderCampaignConfirmacao(){
+  const rows=campaignConfirmacao();
+  const windowBtns=[1,2,3,7].map(n=>'<button class="period-btn '+(confirmWindow===n?'active':'')+'" data-confirmwindow="'+n+'">próximos '+n+'d</button>').join('');
+  const list=rows.map(a=>{
+    const proc=state.procedures.find(p=>p.id===a.procedureId);
+    const msg=fillTemplate(currentClinic.campaign_messages.confirmacao, {nome:firstName(a.clientName), clinica:currentClinic.name, procedimento:(proc?proc.name:'atendimento'), data:fmtDatePT(a.date), hora:a.start});
+    return campaignPatientRow({name:a.clientName, phone:a.clientPhone}, fmtDatePT(a.date)+' às '+a.start+' · '+(proc?escapeHTML(proc.name):'—'), msg);
+  }).join('');
+  return '<p class="hint">Agendamentos dos próximos dias que ainda não foram confirmados.</p>'
+    +'<div class="period-tabs" style="margin:14px 0;">'+windowBtns+'</div>'
+    +campaignMessageEditor('confirmacao','use {nome}, {clinica}, {procedimento}, {data} e {hora}')
+    +'<h3 style="margin-top:24px;">'+rows.length+' agendamento(s)</h3>'
+    +'<div class="patient-list">'+(list || '<p class="empty-note">Nada pra confirmar nesse período.</p>')+'</div>';
+}
+function renderPatientRows(list){
+  if(list.length===0) return '<p class="empty-note">Nenhum paciente cadastrado ainda.</p>';
+  const srcLabel={importado:'Importado',agendamento:'Agendamento',manual:'Manual'};
+  return list.map(p=>{ const c=avatarColor(p.name);
+    const waBtn=p.phone ? ('<a class="wa-icon-btn" href="'+buildWhatsAppLink(p.phone,'')+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Chamar no WhatsApp">'+icon('phone')+'</a>') : '';
+    return '<div class="patient-card" data-editpatient="'+p.id+'">'
+    +'<div class="avatar" style="background:'+c+'22;color:'+c+'">'+escapeHTML(initials(p.name).toUpperCase())+'</div>'
+    +'<div class="patient-info"><div class="patient-name">'+escapeHTML(p.name)+'</div><div class="patient-meta">'+escapeHTML(p.phone)+'</div></div>'
+    +waBtn
+    +'<span class="tag">'+(srcLabel[p.source]||'')+'</span>'
+    +completionRing(completionScore(p))
+    +'</div>'; }).join('');
+}
+function patientForm(existing){
+  const p=existing || {name:'',phone:'',cpf:'',birthDate:'',sex:'',profession:'',healthPlan:'',cep:'',address:'',addressNumber:'',neighborhood:'',city:'',uf:'',referredBy:''};
+  const cityUf=(p.city||'')+(p.uf?(' / '+p.uf):'');
+  return '<h3>'+(existing?'Editar paciente':'Adicionar paciente')+'</h3>'
+    +'<label>Nome completo<input type="text" id="pat-name" value="'+escapeHTML(p.name)+'"></label>'
+    +'<label>Telefone<input type="tel" id="pat-phone" value="'+escapeHTML(p.phone)+'" placeholder="(71) 99999-9999"></label>'
+    +'<label>CPF<input type="text" id="pat-cpf" value="'+escapeHTML(p.cpf)+'"></label>'
+    +'<label>Data de nascimento<input type="date" id="pat-birth" value="'+(p.birthDate||'')+'"></label>'
+    +'<label>Sexo<select id="pat-sex"><option value="" '+(!p.sex?'selected':'')+'>Não informado</option><option value="Feminino" '+(p.sex==='Feminino'?'selected':'')+'>Feminino</option><option value="Masculino" '+(p.sex==='Masculino'?'selected':'')+'>Masculino</option><option value="Outro" '+(p.sex==='Outro'?'selected':'')+'>Outro</option></select></label>'
+    +'<label>Profissão<input type="text" id="pat-profession" value="'+escapeHTML(p.profession)+'"></label>'
+    +'<label>Plano de saúde<input type="text" id="pat-plan" value="'+escapeHTML(p.healthPlan)+'"></label>'
+    +'<label>Indicado por<input type="text" id="pat-referred" value="'+escapeHTML(p.referredBy)+'"></label>'
+    +'<label>CEP<input type="text" id="pat-cep" value="'+escapeHTML(p.cep)+'"></label>'
+    +'<label>Endereço<input type="text" id="pat-address" value="'+escapeHTML(p.address)+'"></label>'
+    +'<label>Bairro<input type="text" id="pat-neigh" value="'+escapeHTML(p.neighborhood)+'"></label>'
+    +'<label>Cidade / UF<input type="text" id="pat-city" value="'+escapeHTML(cityUf)+'"></label>'
+    +'<p class="form-error" id="pat-error"></p>'
+    +'<input type="hidden" id="pat-id" value="'+(p.id||'')+'">'
+    +'<div class="modal-actions">'+(existing?'<button id="pat-delete" class="btn-danger">'+icon('trash')+'</button>':'')+'<button id="patient-cancel" class="ghost-btn">Cancelar</button><button id="patient-save" class="btn-primary">Salvar</button></div>';
+}
+
+/* ---------- Render: settings ---------- */
+function renderSettingsTab(){
+  const profRows=state.professionals.map(p=>'<div class="avail-row"><span style="flex:1;">'+escapeHTML(p.name)+'</span><button data-removeprof="'+p.id+'" class="btn-danger">'+icon('trash')+'</button></div>').join('');
+  const availRows=WEEKDAYS.map(wd=>{
+    const cfg=currentClinic.availability[wd];
+    return '<div class="avail-row"><label class="switch"><input type="checkbox" data-availtoggle="'+wd+'" '+(cfg.enabled?'checked':'')+'> '+WEEKDAY_LABELS[wd]+'</label>'
+      +'<input type="time" data-availstart="'+wd+'" value="'+cfg.start+'" '+(cfg.enabled?'':'disabled')+'>'
+      +'<span class="hint">até</span>'
+      +'<input type="time" data-availend="'+wd+'" value="'+cfg.end+'" '+(cfg.enabled?'':'disabled')+'></div>';
+  }).join('');
+  return '<h2>Ajustes</h2>'
+    +'<label>Nome da clínica<input type="text" id="clinicNameInput" value="'+escapeHTML(currentClinic.name)+'"></label>'
+    +'<button class="btn-primary" id="saveClinicName">Salvar nome</button>'
+    +'<h3 style="margin-top:28px;">Link de agendamento</h3>'
+    +'<p class="hint">Esse é o link que o paciente usa pra marcar sozinho — já entra automaticamente nas mensagens de campanha.</p>'
+    +'<label>Link<input type="text" id="bookingLinkInput" value="'+escapeHTML(currentClinic.booking_link||(window.location.origin+'?c='+currentClinic.slug))+'" placeholder="https://..."></label>'
+    +'<button class="btn-primary" id="saveBookingLink">Salvar link</button>'
+    +'<h3 style="margin-top:28px;">Disponibilidade semanal</h3>'
+    +'<p class="hint">Define os horários usados no agendamento do cliente (vale pra todos os profissionais).</p>'
+    +'<div class="avail-list">'+availRows+'</div>'
+    +'<h3 style="margin-top:28px;">Profissionais</h3>'
+    +'<p class="hint">Opcional — organiza a agenda por pessoa e evita choque de horário entre profissionais.</p>'
+    +'<div class="avail-list">'+(profRows || '<p class="empty-note">Nenhum profissional cadastrado.</p>')+'</div>'
+    +'<div style="display:flex;gap:8px;margin-top:12px;">'
+    +'<input type="text" id="newProfInput" placeholder="Nome do profissional" style="flex:1;padding:9px 10px;border:1px solid var(--border);border-radius:8px;">'
+    +'<button class="btn-primary" id="addProfBtn">'+icon('plus')+' Adicionar</button></div>';
+}
+
+/* ---------- Render: client flow ---------- */
+function clientFlowSteps(){ return state.professionals.length>1 ? ['procedure','professional','day','time','info','done'] : ['procedure','day','time','info','done']; }
+function renderClient(){
+  const steps=clientFlowSteps();
+  const step=steps[clientStepIdx];
+  const proc=state.procedures.find(p=>p.id===clientSel.procedureId);
+  const back='<button class="back-link" data-clientback="1">'+icon('chevronLeft')+' Voltar</button>';
+
+  if(step==='procedure'){
+    const avail=state.procedures.filter(p=>p.active && p.duration);
+    const cards=avail.map(p=>'<button class="proc-choice" data-chooseproc="'+p.id+'"><span class="pc-name">'+escapeHTML(p.name)+'</span><span class="pc-meta">'+p.duration+' min · '+fmtMoney(p.price)+'</span></button>').join('');
+    return '<h2>Escolha o procedimento</h2><div class="proc-grid">'+(cards || '<p class="empty-note">Ainda não há procedimentos disponíveis para agendar.</p>')+'</div>';
+  }
+  if(step==='professional'){
+    const cards=state.professionals.map(p=>'<button class="proc-choice" data-chooseprof="'+escapeHTML(p.name)+'"><span class="pc-name">'+escapeHTML(p.name)+'</span></button>').join('');
+    return back+'<h2>Escolha o profissional</h2><div class="proc-grid">'+cards+'</div>';
+  }
+  if(!proc){ clientStepIdx=0; return renderClient(); }
+  if(step==='day'){
+    const prof=currentProfessional();
+    const days=[];
+    for(let i=0;i<14;i++){
+      const d=new Date(); d.setDate(d.getDate()+i);
+      const iso=toISODate(d);
+      const available=getSlots(iso,proc.duration,prof).length>0;
+      days.push('<button class="date-cell '+(clientSel.date===iso?'active':'')+'" data-chooseday="'+iso+'" '+(available?'':'disabled')+'><div class="dow">'+WEEKDAY_SHORT[WEEKDAYS[d.getDay()]]+'</div><div class="dnum">'+d.getDate()+'</div></button>');
+    }
+    return back+'<h2>Escolha o dia</h2><p class="hint">'+escapeHTML(proc.name)+(prof?' · '+escapeHTML(prof):'')+'</p><div class="date-strip-scroll" style="margin-top:18px;">'+days.join('')+'</div>';
+  }
+  if(step==='time'){
+    const prof=currentProfessional();
+    const slots=getSlots(clientSel.date, proc.duration, prof);
+    const btns=slots.map(s=>'<button class="slot-choice" data-choosetime="'+s.start+'|'+s.end+'">'+s.start+'</button>').join('');
+    return back+'<h2>Escolha o horário</h2><p class="hint">'+fmtDatePT(clientSel.date)+'</p><div class="slot-grid">'+(btns || '<p class="empty-note">Não há mais horários livres neste dia.</p>')+'</div>';
+  }
+  if(step==='info'){
+    const prof=currentProfessional();
+    return back+'<h2>Seus dados</h2>'
+      +'<div class="summary-card"><strong>'+escapeHTML(proc.name)+'</strong><br>'+fmtDatePT(clientSel.date)+' às '+clientSel.start+(prof?'<br>'+escapeHTML(prof):'')+'<br>'+fmtMoney(proc.price)+'</div>'
+      +'<label>Nome completo<input type="text" id="clientNameInput"></label>'
+      +'<label>Telefone (WhatsApp)<input type="tel" id="clientPhoneInput" placeholder="(71) 99999-9999"></label>'
+      +'<p class="form-error" id="client-error"></p>'
+      +'<button class="btn-primary pill-cta" id="confirmBookingBtn">'+icon('check')+' Confirmar agendamento</button>';
+  }
+  if(step==='done'){
+    return '<div class="confirm-screen"><div class="confirm-icon-wrap">'+icon('checkCircle')+'</div><h2>Horário confirmado</h2><p>Anotamos seu horário. Chegue com alguns minutinhos de antecedência.</p><button class="btn-primary pill-cta" id="newBookingBtn">Agendar outro horário</button></div>';
+  }
+}
+
+/* ---------- Render: reports ---------- */
+function periodRange(period){
+  const now=new Date();
+  const todayISO=toISODate(now);
+  if(period==='today') return {start:todayISO, end:todayISO};
+  if(period==='7d'){ const s=new Date(now); s.setDate(s.getDate()-6); return {start:toISODate(s), end:todayISO}; }
+  if(period==='month'){ const s=new Date(now.getFullYear(), now.getMonth(), 1); return {start:toISODate(s), end:todayISO}; }
+  if(period==='year'){ const s=new Date(now.getFullYear(),0,1); return {start:toISODate(s), end:todayISO}; }
+  return {start:todayISO, end:todayISO};
+}
+function procPrice(procId){ const p=state.procedures.find(x=>x.id===procId); return (p && p.price!=null) ? p.price : 0; }
+function sumRevenueForDate(iso){
+  return state.appointments.filter(a=>a.date===iso && a.status==='atendido').reduce((s,a)=>s+procPrice(a.procedureId),0);
+}
+function revenueBuckets(period){
+  const now=new Date();
+  if(period==='7d'){
+    const buckets=[];
+    for(let i=6;i>=0;i--){ const d=new Date(now); d.setDate(d.getDate()-i); buckets.push({label:WEEKDAY_SHORT[WEEKDAYS[d.getDay()]], value:sumRevenueForDate(toISODate(d))}); }
+    return buckets;
+  }
+  if(period==='month'){
+    const y=now.getFullYear(), m=now.getMonth();
+    const buckets=[];
+    for(let day=1; day<=now.getDate(); day++){ const iso=y+'-'+pad(m+1)+'-'+pad(day); buckets.push({label:String(day), value:sumRevenueForDate(iso)}); }
+    return buckets;
+  }
+  if(period==='year'){
+    const y=now.getFullYear();
+    const buckets=[];
+    for(let m=0; m<=now.getMonth(); m++){
+      const start=y+'-'+pad(m+1)+'-01', end=y+'-'+pad(m+1)+'-31';
+      const rev=state.appointments.filter(a=>a.date>=start && a.date<=end && a.status==='atendido').reduce((s,a)=>s+procPrice(a.procedureId),0);
+      buckets.push({label:MONTHS_SHORT[m], value:rev});
+    }
+    return buckets;
+  }
+  return [];
+}
+function renderBarChart(buckets){
+  if(buckets.length===0) return '<p class="empty-note">Sem dados suficientes ainda.</p>';
+  const max=Math.max(1, ...buckets.map(b=>b.value));
+  const barW=100/buckets.length;
+  const showLabels=buckets.length<=14;
+  const bars=buckets.map(b=>{
+    const h=(b.value/max)*100;
+    return '<div class="chart-bar-wrap" style="width:'+barW+'%"><div class="chart-bar" style="height:'+Math.max(2,h)+'%" title="'+escapeHTML(b.label)+': '+fmtMoney(b.value)+'"></div>'+(showLabels?'<div class="chart-bar-label">'+escapeHTML(b.label)+'</div>':'')+'</div>';
+  }).join('');
+  return '<div class="chart-bars">'+bars+'</div>';
+}
+function topProcedures(range){
+  const counts={};
+  state.appointments.filter(a=>a.date>=range.start && a.date<=range.end && a.status==='atendido').forEach(a=>{
+    const p=state.procedures.find(x=>x.id===a.procedureId);
+    const key=p?p.id:'other';
+    if(!counts[key]) counts[key]={name:p?p.name:'Procedimento removido', qty:0, revenue:0};
+    counts[key].qty++; counts[key].revenue+=procPrice(a.procedureId);
+  });
+  return Object.values(counts).sort((a,b)=>b.revenue-a.revenue).slice(0,6);
+}
+function professionalsRanking(range){
+  const counts={};
+  state.appointments.filter(a=>a.date>=range.start && a.date<=range.end && a.status==='atendido').forEach(a=>{
+    const name=a.professional||'Sem profissional definido';
+    if(!counts[name]) counts[name]={name, qty:0, revenue:0};
+    counts[name].qty++; counts[name].revenue+=procPrice(a.procedureId);
+  });
+  return Object.values(counts).sort((a,b)=>b.revenue-a.revenue);
+}
+function renderRanking(items){
+  if(items.length===0) return '<p class="empty-note">Nenhum atendimento concluído nesse período.</p>';
+  const max=Math.max(...items.map(i=>i.revenue),1);
+  return items.map(i=>{
+    const pct=Math.round((i.revenue/max)*100);
+    return '<div class="rank-row"><div class="rank-top"><span class="rank-name">'+escapeHTML(i.name)+'</span><span class="rank-value">'+fmtMoney(i.revenue)+'</span></div>'
+      +'<div class="rank-bar-bg"><div class="rank-bar-fill" style="width:'+pct+'%"></div></div>'
+      +'<div class="rank-meta">'+i.qty+' atendimento(s)</div></div>';
+  }).join('');
+}
+function renderReportsTab(){
+  const range=periodRange(reportPeriod);
+  const periodLabel={today:'Hoje', '7d':'Últimos 7 dias', month:'Este mês', year:'Este ano'}[reportPeriod];
+  const inRange=state.appointments.filter(a=>a.date>=range.start && a.date<=range.end);
+  const atendidos=inRange.filter(a=>a.status==='atendido');
+  const desmarcados=inRange.filter(a=>a.status==='desmarcado');
+  const pendentes=inRange.filter(a=>a.status==='marcado'||a.status==='remarcado'||a.status==='em_atendimento');
+  const realizedRevenue=atendidos.reduce((s,a)=>s+procPrice(a.procedureId),0);
+  const pendingRevenue=pendentes.reduce((s,a)=>s+procPrice(a.procedureId),0);
+  const avgTicket=atendidos.length ? realizedRevenue/atendidos.length : 0;
+  const attTotal=atendidos.length+desmarcados.length;
+  const attRate=attTotal ? Math.round((atendidos.length/attTotal)*100) : null;
+
+  const periodBtns=['today','7d','month','year'].map(p=>'<button class="period-btn '+(reportPeriod===p?'active':'')+'" data-period="'+p+'">'+({today:'Hoje','7d':'7 dias',month:'Mês',year:'Ano'}[p])+'</button>').join('');
+  const chart = reportPeriod==='today' ? '' : '<div class="report-card"><h3>Faturamento no período</h3>'+renderBarChart(revenueBuckets(reportPeriod))+'</div>';
+  const procRanking=topProcedures(range);
+  const profRanking=professionalsRanking(range);
+
+  return '<div class="section-head"><h2>Relatórios</h2><div class="period-tabs">'+periodBtns+'</div></div>'
+    +'<p class="hint">'+periodLabel+'</p>'
+    +'<div class="kpi-grid">'
+    +kpiCard('checkCircle', fmtMoney(realizedRevenue), 'Faturamento realizado', '#3E8E5A')
+    +kpiCard('clock', fmtMoney(pendingRevenue), 'Faturamento previsto', '#B9791E')
+    +kpiCard('sparkle', fmtMoney(avgTicket), 'Ticket médio', '#2F6FBF')
+    +kpiCard('alert', (attRate==null?'—':attRate+'%'), 'Taxa de comparecimento', '#7C4FBF')
+    +'</div>'
+    +chart
+    +'<div class="report-card"><h3>Procedimentos que mais faturaram</h3>'+renderRanking(procRanking)+'</div>'
+    +(profRanking.length>1 ? '<div class="report-card"><h3>Por profissional</h3>'+renderRanking(profRanking)+'</div>' : '');
+}
+
+/* ---------- Auth screens ---------- */
+function renderAuthShell(){
+  if(routeMode==='notfound'){
+    return '<div class="auth-shell"><div class="auth-card"><div class="auth-mark">SC</div><h2>Clínica não encontrada</h2><p class="hint">Confira o link com a clínica — o endereço não corresponde a nenhuma conta cadastrada.</p></div></div>';
+  }
+  if(routeMode==='booterror'){
+    return '<div class="auth-shell"><div class="auth-card"><div class="auth-mark">SC</div><h2>Não foi possível carregar</h2><p class="hint">Confira a conexão e tente atualizar a página. Se persistir, confira se a URL/chave do Supabase estão certas no código.</p></div></div>';
+  }
+  if(authView==='signup'){
+    return '<div class="auth-shell"><div class="auth-card">'
+      +'<div class="auth-mark">SC</div>'
+      +'<h2>Criar conta da clínica</h2>'
+      +'<p class="hint">Cada clínica tem seu próprio login e dados separados dos demais.</p>'
+      +'<label>Nome da clínica<input type="text" id="signup-clinic" placeholder="Studio Fabiana Oliveira"></label>'
+      +'<label>E-mail<input type="email" id="signup-email"></label>'
+      +'<label>Senha<input type="password" id="signup-password" placeholder="mín. 6 caracteres"></label>'
+      +'<p class="form-error">'+escapeHTML(authError)+'</p>'
+      +'<button class="btn-primary pill-cta" id="signupBtn">Criar conta</button>'
+      +'<p class="hint" style="text-align:center;margin-top:14px;">Já tem conta? <button class="link-btn" id="goLoginBtn" style="display:inline-flex;margin-left:6px;">Entrar</button></p>'
+      +'</div></div>';
+  }
+  return '<div class="auth-shell"><div class="auth-card">'
+    +'<div class="auth-mark">SC</div>'
+    +'<h2>Entrar</h2>'
+    +'<label>E-mail<input type="email" id="login-email"></label>'
+    +'<label>Senha<input type="password" id="login-password"></label>'
+    +'<p class="form-error">'+escapeHTML(authError)+'</p>'
+    +'<button class="btn-primary pill-cta" id="loginBtn">Entrar</button>'
+    +'<p class="hint" style="text-align:center;margin-top:14px;">Ainda não tem conta? <button class="link-btn" id="goSignupBtn" style="display:inline-flex;margin-left:6px;">Criar conta</button></p>'
+    +'</div></div>';
+}
+
+/* ---------- Shells ---------- */
+function renderAdminShell(){
+  const tabs=[['inicio','home','Início'],['agenda','calendar','Agenda'],['pacientes','users','Pacientes'],['procedimentos','list','Procedimentos'],['relatorios','chart','Relatórios'],['ajustes','settings','Ajustes']];
+  const navItems=tabs.map(([k,ic,label])=>'<button class="nav-item '+(adminTab===k?'active':'')+'" data-admintab="'+k+'">'+icon(ic)+'<span>'+label+'</span></button>').join('');
+  const bottomItems=tabs.map(([k,ic,label])=>'<button class="bottom-nav-item '+(adminTab===k?'active':'')+'" data-admintab="'+k+'">'+icon(ic)+'<span>'+label+'</span></button>').join('');
+  const body = adminTab==='inicio'?renderDashboard() : adminTab==='agenda'?renderAgendaTab() : adminTab==='pacientes'?renderPatientsTab() : adminTab==='procedimentos'?renderProceduresTab() : adminTab==='relatorios'?renderReportsTab() : renderSettingsTab();
+  const title = (tabs.find(t=>t[0]===adminTab)||[,,''])[2];
+  return '<div class="shell">'
+    +'<aside class="sidebar"><div class="sidebar-brand-row"><div class="brand-mark">'+escapeHTML(initials(currentClinic.name).toUpperCase())+'</div><div class="sidebar-brand">'+escapeHTML(currentClinic.name)+'</div></div><nav class="sidebar-nav">'+navItems+'</nav>'
+    +'<button class="switch-mode-btn" data-mode="client">'+icon('calendar')+'<span>Ver como cliente</span></button>'
+    +'<button class="sidebar-logout" id="logoutBtn">'+icon('x')+'<span>Sair</span></button></aside>'
+    +'<div class="main-area"><header class="topbar"><div class="topbar-title">'+title+'</div><button class="topbar-action" data-mode="client" aria-label="Ver como cliente">'+icon('calendar')+'</button></header>'
+    +'<main class="content">'+body+'</main></div>'
+    +'<nav class="bottom-nav">'+bottomItems+'</nav>'
+    +'</div>';
+}
+function renderClientShell(){
+  return '<div class="client-shell"><div class="client-topbar"><div class="sidebar-brand" style="color:var(--ink);padding:0;">'+escapeHTML(currentClinic.name)+'</div>'
+    +'<button class="link-btn" data-mode="admin">'+icon('settings')+' Painel da clínica</button></div>'
+    +'<div class="client-flow">'+renderClient()+'</div></div>';
+}
+function animatePostRender(){
+  const arc=document.querySelector('.gauge-arc');
+  if(arc){ const target=Number(arc.dataset.targetOffset); requestAnimationFrame(()=>{ arc.style.strokeDashoffset=String(target); }); }
+  const pctEl=document.querySelector('[data-count-to]');
+  if(pctEl){
+    const target=Number(pctEl.dataset.countTo);
+    let cur=0; const step=Math.max(1, Math.round(target/24));
+    const iv=setInterval(()=>{ cur=Math.min(target, cur+step); pctEl.textContent=String(cur); if(cur>=target) clearInterval(iv); }, 20);
+  }
+}
+function render(){
+  if(routeMode==='loading'){ document.getElementById('root').innerHTML='<div class="boot-loading">Carregando…</div>'; return; }
+  if(routeMode==='auth' || routeMode==='notfound' || routeMode==='booterror'){ document.getElementById('root').innerHTML=renderAuthShell(); return; }
+  document.getElementById('root').innerHTML = mode==='admin' ? renderAdminShell() : renderClientShell();
+  animatePostRender();
+}
+
+/* ---------- Events ---------- */
+document.addEventListener('click', async (e)=>{
+  const t=e.target;
+  const byData = (attr)=> t.closest('['+attr+']');
+  let el;
+
+  /* Auth */
+  if(t.id==='goSignupBtn'){ authView='signup'; authError=''; render(); return; }
+  if(t.id==='goLoginBtn'){ authView='login'; authError=''; render(); return; }
+  if(t.id==='signupBtn'){
+    const clinicName=document.getElementById('signup-clinic').value.trim();
+    const email=document.getElementById('signup-email').value.trim();
+    const password=document.getElementById('signup-password').value;
+    if(!clinicName || !email || !password){ authError='Preencha todos os campos.'; render(); return; }
+    const {data, error}=await sb.auth.signUp({email, password, options:{data:{clinic_name:clinicName}}});
+    if(error){ authError=error.message; render(); return; }
+    authError='';
+    if(data.session){ await boot(); }
+    else { authView='login'; render(); showToast('Conta criada! Confirme seu e-mail (se pedido) e entre.'); }
+    return;
+  }
+  if(t.id==='loginBtn'){
+    const email=document.getElementById('login-email').value.trim();
+    const password=document.getElementById('login-password').value;
+    const {data, error}=await sb.auth.signInWithPassword({email, password});
+    if(error){ authError='E-mail ou senha inválidos.'; render(); return; }
+    authError='';
+    await boot();
+    return;
+  }
+  if(t.id==='logoutBtn'){
+    await sb.auth.signOut();
+    currentClinic=null; currentSession=null;
+    state={professionals:[], procedures:[], patients:[], appointments:[]};
+    routeMode='auth'; authView='login'; mode='admin'; adminTab='inicio';
+    render();
+    return;
+  }
+
+  if(el=byData('data-mode')){
+    if(el.dataset.mode==='admin' && publicClinicSlug){ window.location.href=window.location.origin+window.location.pathname; return; }
+    mode=el.dataset.mode; sidebarOpen=false; render(); return;
+  }
+  if(el=byData('data-admintab')){ adminTab=el.dataset.admintab; sidebarOpen=false; render(); return; }
+  if(el=byData('data-closesidebar')){ sidebarOpen=false; render(); return; }
+  if(el=byData('data-shiftweek')){ agendaDate=shiftDate(agendaDate, Number(el.dataset.shiftweek)); render(); return; }
+  if(el=byData('data-period')){ reportPeriod=el.dataset.period; render(); return; }
+  if(el=byData('data-pickdate')){ agendaDate=el.dataset.pickdate; render(); return; }
+
+  if(el=byData('data-apptid')){
+    const appt=state.appointments.find(a=>a.id===el.dataset.apptid);
+    if(appt) openModal(apptDetailModal(appt));
+    return;
+  }
+  if(t.id==='appt-cancel'){ closeModal(); return; }
+  if(t.id==='appt-save'){
+    const id=document.getElementById('appt-id').value;
+    const status=document.getElementById('appt-status').value;
+    const appt=state.appointments.find(a=>a.id===id);
+    if(appt){
+      await sb.from('appointments').update({status}).eq('id', id);
+      appt.status=status; closeModal(); render();
+    }
+    return;
+  }
+  if(t.id==='appt-delete'){
+    const id=document.getElementById('appt-id').value;
+    confirmModal('Excluir este agendamento? Essa ação não pode ser desfeita.', async ()=>{
+      await sb.from('appointments').delete().eq('id', id);
+      state.appointments=state.appointments.filter(a=>a.id!==id); render();
+    });
+    return;
+  }
+  if(t.id==='newApptBtn'){ openModal(newAppointmentForm()); return; }
+  if(t.id==='na-cancel'){ closeModal(); return; }
+  if(t.id==='na-save'){
+    const name=document.getElementById('na-name').value.trim();
+    const phone=document.getElementById('na-phone').value.trim();
+    const procId=document.getElementById('na-procedure').value;
+    const profSelect=document.getElementById('na-professional');
+    const professional=profSelect ? profSelect.value : null;
+    const date=document.getElementById('na-date').value;
+    const time=document.getElementById('na-time').value;
+    const duration=Number(document.getElementById('na-duration').value)||0;
+    const status=document.getElementById('na-status').value;
+    const errEl=document.getElementById('na-error');
+    if(!name || !phone){ errEl.textContent='Preencha nome e telefone do paciente.'; return; }
+    if(!procId){ errEl.textContent='Escolha um procedimento.'; return; }
+    if(!date || !time){ errEl.textContent='Escolha data e horário.'; return; }
+    if(!duration){ errEl.textContent='Informe a duração em minutos.'; return; }
+    const startMin=timeToMin(time);
+    const endTime=minToTime(startMin+duration);
+    const conflict=state.appointments.some(a=>a.date===date && a.status!=='desmarcado' && (a.professional||null)===(professional||null)
+      && startMin<timeToMin(a.end) && timeToMin(a.start)<startMin+duration);
+    const {data:apptRow, error}=await sb.from('appointments').insert({
+      clinic_id:currentClinic.id, procedure_id:procId, professional:professional||null,
+      date, start_time:time, end_time:endTime, status
+    }).select().single();
+    if(error){ errEl.textContent='Não foi possível salvar agora. Tente de novo.'; return; }
+    const patientId=await upsertPatient(name, phone, 'manual');
+    await sb.from('appointment_contacts').insert({appointment_id:apptRow.id, patient_id:patientId, client_name:name, client_phone:phone});
+    state.appointments.push({id:apptRow.id, procedureId:procId, date, start:time, end:endTime, professional:professional||null, clientName:name, clientPhone:phone, status});
+    closeModal();
+    agendaDate=date;
+    render();
+    showToast(conflict ? 'Agendamento salvo — mas já existe outro horário nesse período para esse profissional.' : 'Agendamento salvo.');
+    return;
+  }
+  if(t.id==='loadStandardProcBtn'){
+    const r=await loadStandardProcedures();
+    render();
+    showToast(r.added+' procedimento(s) padrão adicionados'+(r.skipped?', '+r.skipped+' já existiam':'')+'.');
+    return;
+  }
+  if(el=byData('data-patientsview')){ patientsView=el.dataset.patientsview; render(); return; }
+  if(el=byData('data-campaigntype')){ campaignType=el.dataset.campaigntype; render(); return; }
+  if(el=byData('data-threshold')){ remarketingThreshold=Number(el.dataset.threshold); render(); return; }
+  if(el=byData('data-followup')){ followupWindow=Number(el.dataset.followup); render(); return; }
+  if(el=byData('data-birthday')){ birthdayWindow=Number(el.dataset.birthday); render(); return; }
+  if(el=byData('data-confirmwindow')){ confirmWindow=Number(el.dataset.confirmwindow); render(); return; }
+  if(el=byData('data-savecampaignmsg')){
+    const type=el.dataset.savecampaignmsg;
+    const textarea=document.querySelector('[data-campaignmsg="'+type+'"]');
+    const val=textarea ? textarea.value.trim() : '';
+    if(val){
+      currentClinic.campaign_messages=Object.assign({}, currentClinic.campaign_messages, {[type]:val});
+      await sb.from('clinics').update({campaign_messages: currentClinic.campaign_messages}).eq('id', currentClinic.id);
+      showToast('Mensagem salva.');
+    }
+    return;
+  }
+
+  if(t.id==='addProcBtn'){ openModal(procForm(null)); return; }
+  if(el=byData('data-procedit')){ openModal(procForm(state.procedures.find(p=>p.id===el.dataset.procedit))); return; }
+  if(el=byData('data-procdel')){
+    confirmModal('Excluir este procedimento? Essa ação não pode ser desfeita.', async ()=>{
+      await sb.from('procedures').delete().eq('id', el.dataset.procdel);
+      state.procedures=state.procedures.filter(p=>p.id!==el.dataset.procdel); render();
+    });
+    return;
+  }
+  if(t.id==='pf-cancel'){ closeModal(); return; }
+  if(t.id==='pf-save'){
+    const id=document.getElementById('pf-id').value;
+    const name=document.getElementById('pf-name').value.trim();
+    const durationRaw=document.getElementById('pf-duration').value;
+    const duration=durationRaw ? Number(durationRaw) : null;
+    const priceRaw=document.getElementById('pf-price').value;
+    const price=priceRaw!=='' ? Number(priceRaw) : null;
+    if(!name){ document.getElementById('pf-error').textContent='Dê um nome ao procedimento.'; return; }
+    if(id){
+      await sb.from('procedures').update({name,duration,price}).eq('id', id);
+      const p=state.procedures.find(p=>p.id===id); p.name=name; p.duration=duration; p.price=price;
+    } else {
+      const {data,error}=await sb.from('procedures').insert({clinic_id:currentClinic.id, name, duration, price, active:true}).select().single();
+      if(!error) state.procedures.push(procedureFromDb(data));
+    }
+    closeModal(); render();
+    return;
+  }
+  if(t.id==='showProcTemplateBtn'){
+    openModal('<h3>Formatos aceitos</h3><p class="hint">Você pode importar direto o CSV de tabela de preços do SaudeViaNet (colunas <strong>Procedimento</strong> e <strong>Preço</strong>), ou uma planilha simples com duas colunas:</p><textarea readonly class="template-textarea" onclick="this.select()">Procedimento,Preço\nLimpeza de pele,120,00</textarea><p class="hint">A duração precisa ser preenchida depois, na edição de cada procedimento.</p><div class="modal-actions"><button id="modal-close-only" class="btn-primary">Fechar</button></div>');
+    return;
+  }
+  if(t.id==='modal-close-only'){ closeModal(); return; }
+
+  if(t.id==='addPatientBtn'){ openModal(patientForm(null)); return; }
+  if(el=byData('data-editpatient')){ openModal(patientForm(state.patients.find(p=>p.id===el.dataset.editpatient))); return; }
+  if(t.id==='patient-cancel'){ closeModal(); return; }
+  if(t.id==='pat-delete'){
+    const id=document.getElementById('pat-id').value;
+    confirmModal('Excluir este paciente? Essa ação não pode ser desfeita.', async ()=>{
+      await sb.from('patients').delete().eq('id', id);
+      state.patients=state.patients.filter(p=>p.id!==id); closeModal(); render();
+    });
+    return;
+  }
+  if(t.id==='patient-save'){
+    const id=document.getElementById('pat-id').value;
+    const name=document.getElementById('pat-name').value.trim();
+    const phone=document.getElementById('pat-phone').value.trim();
+    if(!name || !phone){ document.getElementById('pat-error').textContent='Preencha nome e telefone.'; return; }
+    const cityUf=document.getElementById('pat-city').value.trim();
+    let city=cityUf, uf='';
+    if(cityUf.includes('/')){ const parts=cityUf.split('/'); city=parts[0].trim(); uf=(parts[1]||'').trim(); }
+    const local={ name, phone, cpf:document.getElementById('pat-cpf').value.trim(), birthDate:document.getElementById('pat-birth').value,
+      sex:document.getElementById('pat-sex').value, profession:document.getElementById('pat-profession').value.trim(),
+      healthPlan:document.getElementById('pat-plan').value.trim(), referredBy:document.getElementById('pat-referred').value.trim(),
+      cep:document.getElementById('pat-cep').value.trim(), address:document.getElementById('pat-address').value.trim(),
+      neighborhood:document.getElementById('pat-neigh').value.trim(), city, uf, source:'manual' };
+    if(id){
+      const existing=state.patients.find(p=>p.id===id);
+      await sb.from('patients').update(patientToDb(Object.assign({}, existing, local))).eq('id', id);
+      Object.assign(existing, local);
+    } else {
+      const {data,error}=await sb.from('patients').insert(Object.assign({clinic_id:currentClinic.id}, patientToDb(local))).select().single();
+      if(!error) state.patients.push(patientFromDb(data));
+    }
+    closeModal(); render();
+    return;
+  }
+  if(t.id==='showPatTemplateBtn'){
+    openModal('<h3>Formatos aceitos</h3><p class="hint">Você pode importar direto o CSV de cadastro de pacientes do SaudeViaNet (com colunas como <strong>Nome</strong>, <strong>Telefone principal</strong>, <strong>CPF</strong> etc.), ou uma planilha simples com duas colunas:</p><textarea readonly class="template-textarea" onclick="this.select()">nome,telefone\nMaria Silva,71999998888</textarea><div class="modal-actions"><button id="modal-close-only" class="btn-primary">Fechar</button></div>');
+    return;
+  }
+
+  if(t.id==='saveClinicName'){
+    const name=document.getElementById('clinicNameInput').value.trim()||'Sua Clínica';
+    currentClinic.name=name;
+    await sb.from('clinics').update({name}).eq('id', currentClinic.id);
+    render(); showToast('Nome salvo.');
+    return;
+  }
+  if(t.id==='saveBookingLink'){
+    const link=document.getElementById('bookingLinkInput').value.trim();
+    currentClinic.booking_link=link;
+    await sb.from('clinics').update({booking_link:link}).eq('id', currentClinic.id);
+    showToast('Link salvo.');
+    return;
+  }
+  if(t.id==='addProfBtn'){
+    const inp=document.getElementById('newProfInput'); const name=inp.value.trim();
+    if(name && !state.professionals.some(p=>p.name===name)){
+      const {data,error}=await sb.from('professionals').insert({clinic_id:currentClinic.id, name}).select().single();
+      if(!error){ state.professionals.push({id:data.id, name:data.name}); render(); }
+    }
+    return;
+  }
+  if(el=byData('data-removeprof')){
+    const profId=el.dataset.removeprof;
+    await sb.from('professionals').delete().eq('id', profId);
+    state.professionals=state.professionals.filter(p=>p.id!==profId);
+    render();
+    return;
+  }
+
+  if(t.id==='confirm-yes'){ if(pendingConfirm) await pendingConfirm(); pendingConfirm=null; closeModal(); return; }
+  if(t.id==='confirm-no'){ pendingConfirm=null; closeModal(); return; }
+  if(t.id==='modalBackdrop'){ closeModal(); return; }
+
+  if(el=byData('data-chooseproc')){ clientSel.procedureId=el.dataset.chooseproc; clientStepIdx++; render(); return; }
+  if(el=byData('data-chooseprof')){ clientSel.professional=el.dataset.chooseprof; clientStepIdx++; render(); return; }
+  if(el=byData('data-chooseday')){ clientSel.date=el.dataset.chooseday; clientStepIdx++; render(); return; }
+  if(el=byData('data-choosetime')){ const [s,en]=el.dataset.choosetime.split('|'); clientSel.start=s; clientSel.end=en; clientStepIdx++; render(); return; }
+  if(el=byData('data-clientback')){ clientStepIdx=Math.max(0, clientStepIdx-1); render(); return; }
+  if(t.id==='confirmBookingBtn'){
+    const name=document.getElementById('clientNameInput').value.trim();
+    const phone=document.getElementById('clientPhoneInput').value.trim();
+    if(!name || !phone){ document.getElementById('client-error').textContent='Preencha nome e telefone para confirmar.'; return; }
+    try{
+      await createAppointment(clientSel.procedureId, clientSel.date, clientSel.start, clientSel.end, currentProfessional(), name, phone);
+      clientStepIdx++; render();
+    }catch(err){ document.getElementById('client-error').textContent='Não foi possível confirmar agora. Tente de novo.'; }
+    return;
+  }
+  if(t.id==='newBookingBtn'){ clientSel={procedureId:null,professional:null,date:null,start:null,end:null}; clientStepIdx=0; render(); return; }
+});
+
+document.addEventListener('change', async (e)=>{
+  const t=e.target;
+  if(t.id==='na-procedure'){
+    const opt=t.selectedOptions[0];
+    const durInput=document.getElementById('na-duration');
+    if(opt && opt.dataset.duration && durInput){ durInput.value=opt.dataset.duration; }
+    return;
+  }
+  if(t.dataset.proctoggle){
+    const p=state.procedures.find(p=>p.id===t.dataset.proctoggle);
+    p.active=t.checked;
+    await sb.from('procedures').update({active:t.checked}).eq('id', p.id);
+    render();
+    return;
+  }
+  if(t.dataset.availtoggle){
+    currentClinic.availability[t.dataset.availtoggle].enabled=t.checked;
+    await sb.from('clinics').update({availability:currentClinic.availability}).eq('id', currentClinic.id);
+    render();
+    return;
+  }
+  if(t.dataset.availstart){
+    currentClinic.availability[t.dataset.availstart].start=t.value;
+    await sb.from('clinics').update({availability:currentClinic.availability}).eq('id', currentClinic.id);
+    return;
+  }
+  if(t.dataset.availend){
+    currentClinic.availability[t.dataset.availend].end=t.value;
+    await sb.from('clinics').update({availability:currentClinic.availability}).eq('id', currentClinic.id);
+    return;
+  }
+  if(t.id==='csvPatInput'){
+    const file=t.files[0]; if(!file) return;
+    try{ const text=await file.text(); const r=await importPatientsCSV(text); render();
+      showToast(r.error ? 'Não consegui ler esse arquivo.' : ('Importação concluída: '+r.added+' adicionados, '+r.updated+' atualizados.'));
+    }catch(err){ showToast('Não foi possível ler esse arquivo. Confira se é um .csv.'); }
+    return;
+  }
+  if(t.id==='csvProcInput'){
+    const file=t.files[0]; if(!file) return;
+    try{ const text=await file.text(); const r=await importProceduresCSV(text); render();
+      showToast(r.error ? 'Não consegui ler esse arquivo.' : ('Importação concluída: '+r.added+' adicionados, '+r.updated+' atualizados.'));
+    }catch(err){ showToast('Não foi possível ler esse arquivo. Confira se é um .csv.'); }
+    return;
+  }
+});
+
+document.addEventListener('input', (e)=>{
+  if(e.target.id==='na-name'){
+    const match=state.patients.find(p=>p.name===e.target.value);
+    const phoneInput=document.getElementById('na-phone');
+    if(match && phoneInput && !phoneInput.value){ phoneInput.value=match.phone; }
+    return;
+  }
+  if(e.target.id==='patientSearch'){
+    const q=e.target.value.toLowerCase();
+    const filtered=state.patients.filter(p=>p.name.toLowerCase().includes(q) || p.phone.includes(q));
+    const list=document.getElementById('patientList');
+    if(list) list.innerHTML=renderPatientRows(filtered);
+  }
+});
+
+window.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
