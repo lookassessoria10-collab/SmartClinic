@@ -1356,7 +1356,12 @@ document.addEventListener('click', async (e)=>{
     const email=document.getElementById('login-email').value.trim();
     const password=document.getElementById('login-password').value;
     const {data, error}=await sb.auth.signInWithPassword({email, password});
-    if(error){ authError='E-mail ou senha inválidos.'; render(); return; }
+    if(error){
+      authError = /email not confirmed/i.test(error.message)
+        ? 'Falta confirmar o e-mail — veja sua caixa de entrada, ou desative a confirmação em Authentication > Providers no Supabase.'
+        : error.message;
+      render(); return;
+    }
     authError='';
     await boot();
     return;
