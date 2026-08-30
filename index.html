@@ -1302,16 +1302,14 @@ function renderAdminShell(){
   const title = (tabs.find(t=>t[0]===adminTab)||[,,''])[2];
   return '<div class="shell">'
     +'<aside class="sidebar"><div class="sidebar-brand-row"><div class="brand-mark">'+escapeHTML(initials(currentClinic.name).toUpperCase())+'</div><div class="sidebar-brand">'+escapeHTML(currentClinic.name)+'</div></div><nav class="sidebar-nav">'+navItems+'</nav>'
-    +'<button class="switch-mode-btn" data-mode="client">'+icon('calendar')+'<span>Ver como cliente</span></button>'
     +'<button class="sidebar-logout" id="logoutBtn">'+icon('x')+'<span>Sair</span></button></aside>'
-    +'<div class="main-area"><header class="topbar"><div class="topbar-title">'+title+'</div><button class="topbar-action" data-mode="client" aria-label="Ver como cliente">'+icon('calendar')+'</button></header>'
+    +'<div class="main-area"><header class="topbar"><div class="topbar-title">'+title+'</div></header>'
     +'<main class="content">'+body+'</main></div>'
     +'<nav class="bottom-nav">'+bottomItems+'</nav>'
     +'</div>';
 }
 function renderClientShell(){
-  return '<div class="client-shell"><div class="client-topbar"><div class="sidebar-brand" style="color:var(--ink);padding:0;">'+escapeHTML(currentClinic.name)+'</div>'
-    +'<button class="link-btn" data-mode="admin">'+icon('settings')+' Painel da clínica</button></div>'
+  return '<div class="client-shell"><div class="client-topbar"><div class="sidebar-brand" style="color:var(--ink);padding:0;">'+escapeHTML(currentClinic.name)+'</div></div>'
     +'<div class="client-flow">'+renderClient()+'</div></div>';
 }
 function animatePostRender(){
