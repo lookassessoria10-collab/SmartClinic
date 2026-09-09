@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SmartClinic</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
@@ -49,6 +51,15 @@ p{line-height:1.55;}
 .auth-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg, var(--brand-dark), #0B2E3D);}
 .auth-card{background:var(--surface);border-radius:16px;padding:32px;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.3);animation:fadeInUp .3s ease;}
 .auth-mark{width:44px;height:44px;border-radius:10px;background:var(--brand-tint);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;margin-bottom:16px;}
+.tour-icon{width:52px;height:52px;border-radius:14px;background:var(--brand-tint);color:var(--brand);display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.tour-icon .icon{width:26px;height:26px;}
+.tour-dots{display:flex;gap:6px;justify-content:center;margin:16px 0;}
+.tour-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:all .2s ease;}
+.tour-dot.active{background:var(--brand);width:18px;border-radius:4px;}
+.review-list{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+.review-row{display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 10px;}
+.review-row input[type=checkbox]{flex-shrink:0;width:18px;height:18px;}
+.review-row input[type=text]{flex:1;min-width:0;padding:7px 9px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;}
 
 /* Shell / layout */
 .shell{display:flex;min-height:100vh;}
@@ -196,7 +207,7 @@ p{line-height:1.55;}
 .proc-name2{font-weight:600;font-size:0.95rem;margin-top:2px;}
 .proc-meta2{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--ink-soft);margin-top:4px;}
 .warn-chip{font-size:0.68rem;background:var(--warn-tint);color:var(--warn);padding:2px 8px;border-radius:10px;font-weight:700;display:inline-block;margin-top:6px;}
-.proc-actions2{display:flex;gap:12px;align-items:center;font-size:0.82rem;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;}
+.proc-actions2{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:0.82rem;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;}
 .proc-actions2 button{background:none;border:none;color:var(--ink-soft);font-weight:600;font-size:0.8rem;display:flex;align-items:center;gap:4px;transition:color .15s ease;}
 .proc-actions2 button:hover{color:var(--brand);}
 .proc-actions2 button[data-procdel]:hover{color:var(--danger);}
@@ -260,10 +271,11 @@ label input,label select,label textarea{display:block;width:100%;margin-top:5px;
     display:flex; position:fixed; bottom:0; left:0; right:0; background:var(--surface);
     border-top:1px solid var(--border); z-index:50; padding:8px 4px calc(6px + env(safe-area-inset-bottom));
     box-shadow:0 -4px 16px rgba(20,30,40,0.07);
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
   }
-  .bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--ink-soft);font-size:0.63rem;font-weight:600;padding:5px 2px;border-radius:8px;}
+  .bottom-nav-item{flex:0 0 auto;min-width:70px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:var(--ink-soft);font-size:0.7rem;font-weight:600;padding:6px 8px;border-radius:8px;}
   .bottom-nav-item.active{color:var(--brand);}
-  .bottom-nav-item .icon{width:20px;height:20px;}
+  .bottom-nav-item .icon{width:25px;height:25px;}
 }
 </style>
 </head>
@@ -276,6 +288,7 @@ label input,label select,label textarea{display:block;width:100%;margin-top:5px;
 const SUPABASE_URL='https://xymjzklqgmsydaqcykyt.supabase.co';
 const SUPABASE_KEY='sb_publishable_T45wE-2JUjWCgmyIk2WQIQ_N1eajeUT';
 const sb=window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'; }
 
 /* ---------- Small helpers ---------- */
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -419,6 +432,37 @@ let clientStepIdx=0;
 let clientSel={procedureId:null, professional:null, date:null, start:null, end:null};
 let pendingConfirm=null;
 let reportPeriod='month';
+let pdfReviewRows=null;
+let tourStep=0;
+const TOUR_STEPS=[
+  {icon:'sparkle', title:'Bem-vindo(a) ao SmartClinic!', body:'Um tour rápido pelas principais funções — menos de um minuto, e dá pra pular quando quiser.'},
+  {icon:'home', title:'Início', body:'Seu resumo do dia: ocupação da agenda, financeiro do mês, próximos agendamentos e o que está pendente de atenção.'},
+  {icon:'calendar', title:'Agenda', body:'Veja e gerencie os horários marcados. Dá pra adicionar um agendamento manual — pra quem chegou presencialmente ou pra deixar um retorno já marcado — e confirmar direto pelo WhatsApp.'},
+  {icon:'users', title:'Pacientes', body:'Cadastro completo de cada paciente, importação em planilha, e campanhas prontas de WhatsApp: retorno, pós-procedimento, aniversário e confirmação.'},
+  {icon:'list', title:'Procedimentos', body:'Cadastre os serviços da clínica com duração e preço — só assim eles aparecem pro paciente escolher na hora de agendar. Tem uma lista padrão pra começar rápido.'},
+  {icon:'chart', title:'Relatórios', body:'Faturamento realizado e previsto, ticket médio, taxa de comparecimento e o ranking dos procedimentos que mais rendem.'},
+  {icon:'settings', title:'Ajustes', body:'Nome da clínica, o link de agendamento pra compartilhar com os pacientes, horários de atendimento e os profissionais da equipe.'},
+];
+function renderTourStep(){
+  const s=TOUR_STEPS[tourStep];
+  const isLast=tourStep===TOUR_STEPS.length-1;
+  const dots=TOUR_STEPS.map((_,i)=>'<span class="tour-dot '+(i===tourStep?'active':'')+'"></span>').join('');
+  return '<div class="tour-icon">'+icon(s.icon)+'</div>'
+    +'<h3>'+escapeHTML(s.title)+'</h3>'
+    +'<p class="hint">'+escapeHTML(s.body)+'</p>'
+    +'<div class="tour-dots">'+dots+'</div>'
+    +'<div class="modal-actions" style="justify-content:space-between;">'
+    +'<button class="ghost-btn" id="tourSkip">Pular tour</button>'
+    +'<div style="display:flex;gap:8px;">'
+    +(tourStep>0 ? '<button class="ghost-btn" id="tourBack">Voltar</button>' : '')
+    +'<button class="btn-primary" id="tourNext">'+(isLast?'Concluir':'Próximo')+'</button>'
+    +'</div></div>';
+}
+async function finishTour(){
+  currentClinic.has_completed_tour=true;
+  await sb.from('clinics').update({has_completed_tour:true}).eq('id', currentClinic.id);
+  closeModal();
+}
 const MONTHS_SHORT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const DEFAULT_AVAILABILITY={
   sun:{enabled:false, start:'09:00', end:'18:00'},
@@ -467,6 +511,7 @@ async function boot(){
         await loadAllData();
         routeMode='admin';
         render();
+        if(!currentClinic.has_completed_tour){ tourStep=0; openModal(renderTourStep()); }
         return;
       }
     }
@@ -646,8 +691,53 @@ function campaignConfirmacao(){
 }
 
 /* ---------- Imports ---------- */
-async function importPatientsCSV(text){
-  const rows=parseCSVGeneric(text);
+async function readSpreadsheetFile(file){
+  const name=file.name.toLowerCase();
+  if(name.endsWith('.xlsx') || name.endsWith('.xls')){
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf, {type:'array'});
+    const sheet=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(sheet, {header:1, raw:false, defval:''});
+    return rows.map(r=>r.map(cell=>String(cell==null?'':cell).trim())).filter(r=>r.some(v=>v!==''));
+  }
+  const text=await file.text();
+  return parseCSVGeneric(text);
+}
+async function importPatientsFile(file){ return importPatientsRows(await readSpreadsheetFile(file)); }
+async function importProceduresFile(file){ return importProceduresRows(await readSpreadsheetFile(file)); }
+
+async function extractPdfText(file){
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  const lines=[];
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const content=await page.getTextContent();
+    const byLine={};
+    content.items.forEach(it=>{
+      const y=Math.round(it.transform[5]);
+      if(!byLine[y]) byLine[y]=[];
+      byLine[y].push({str:it.str, x:it.transform[4]});
+    });
+    Object.keys(byLine).map(Number).sort((a,b)=>b-a).forEach(y=>{
+      const lineText=byLine[y].sort((a,b)=>a.x-b.x).map(it=>it.str).join(' ').replace(/\s+/g,' ').trim();
+      if(lineText) lines.push(lineText);
+    });
+  }
+  return lines;
+}
+function linesToReviewRows(lines){
+  const phoneRegex=/(\(?\d{2}\)?[\s.-]?)?\d{4,5}[\s.-]?\d{4}/;
+  return lines.map(line=>{
+    const m=line.match(phoneRegex);
+    const phone=m ? m[0].trim() : '';
+    let name = m ? (line.slice(0,m.index)+line.slice(m.index+m[0].length)) : line;
+    name = name.replace(/[:|;,\-–]+/g,' ').replace(/\b(nome|telefone|tel|fone|paciente|cliente|whatsapp|celular)\b[:\s]*/gi,'').replace(/\s+/g,' ').trim();
+    return {selected: !!(name && phone), name, phone};
+  }).filter(r=> r.name || r.phone);
+}
+
+async function importPatientsRows(rows){
   if(rows.length<2) return {added:0, updated:0, error:true};
   const header=rows[0].map(h=>h.trim());
   const phoneKey=header.find(h=>/telefone/i.test(h));
@@ -690,8 +780,7 @@ async function importPatientsCSV(text){
   }
   return {added, updated};
 }
-async function importProceduresCSV(text){
-  const rows=parseCSVGeneric(text);
+async function importProceduresRows(rows){
   if(rows.length<2) return {added:0, updated:0, error:true};
   const header=rows[0].map(h=>h.trim());
   const newOnes=[]; const updates=[];
@@ -919,18 +1008,17 @@ function renderProceduresTab(){
     const meta = p.duration ? (p.duration+' min · '+fmtMoney(p.price)) : fmtMoney(p.price);
     const warn = !p.duration ? '<span class="warn-chip">'+icon('alert')+' Defina a duração</span>' : (p.price==null ? '<span class="warn-chip">'+icon('alert')+' Sem preço</span>' : '');
     return '<div class="proc-card2 '+(p.active?'':'inactive')+'">'
-      +'<div class="proc-top"><div class="proc-icon">'+icon('list')+'</div>'
-      +'<label class="switch"><input type="checkbox" data-proctoggle="'+p.id+'" '+(p.active?'checked':'')+'> Ativo</label></div>'
+      +'<div class="proc-top"><div class="proc-icon">'+icon('list')+'</div></div>'
       +'<div class="proc-name2">'+escapeHTML(p.name)+'</div>'
       +'<div class="proc-meta2">'+meta+(p.category?' · '+escapeHTML(p.category):'')+'</div>'
       +warn
-      +'<div class="proc-actions2"><button data-procedit="'+p.id+'">'+icon('edit')+' Editar</button><button data-procdel="'+p.id+'">'+icon('trash')+' Excluir</button></div>'
+      +'<div class="proc-actions2"><label class="switch"><input type="checkbox" data-proctoggle="'+p.id+'" '+(p.active?'checked':'')+'> Ativo</label><button data-procedit="'+p.id+'">'+icon('edit')+' Editar</button><button data-procdel="'+p.id+'">'+icon('trash')+' Excluir</button></div>'
       +'</div>';
   }).join('');
   return '<div class="section-head"><h2>Procedimentos</h2><div>'
     +'<button class="ghost-btn" id="loadStandardProcBtn">'+icon('sparkle')+' Lista padrão</button>'
     +'<button class="ghost-btn" id="showProcTemplateBtn">'+icon('search')+' Ver formatos aceitos</button>'
-    +'<label class="file-btn">'+icon('upload')+' Importar CSV<input type="file" id="csvProcInput" accept=".csv,text/csv" style="display:none"></label>'
+    +'<label class="file-btn">'+icon('upload')+' Importar planilha<input type="file" id="csvProcInput" accept=".csv,.xlsx,.xls,text/csv" style="display:none"></label>'
     +'<button class="btn-primary" id="addProcBtn">'+icon('plus')+' Novo procedimento</button>'
     +'</div></div>'
     +'<p class="hint">Só procedimentos ativos e com duração definida aparecem para o cliente agendar.</p>'
@@ -952,6 +1040,7 @@ function procForm(existing){
 
 /* ---------- Render: patients ---------- */
 function renderPatientsTab(){
+  if(pdfReviewRows) return renderPdfReviewScreen();
   const viewToggle='<div class="period-tabs" style="margin-bottom:16px;">'
     +'<button class="period-btn '+(patientsView==='todos'?'active':'')+'" data-patientsview="todos">Todos</button>'
     +'<button class="period-btn '+(patientsView==='campanhas'?'active':'')+'" data-patientsview="campanhas">Campanhas</button>'
@@ -959,11 +1048,27 @@ function renderPatientsTab(){
   if(patientsView==='campanhas') return viewToggle+renderCampaignsView();
   return viewToggle+'<div class="section-head"><h2>Pacientes</h2><div>'
     +'<button class="ghost-btn" id="showPatTemplateBtn">'+icon('search')+' Ver formatos aceitos</button>'
-    +'<label class="file-btn">'+icon('upload')+' Importar CSV<input type="file" id="csvPatInput" accept=".csv,text/csv" style="display:none"></label>'
+    +'<label class="file-btn">'+icon('upload')+' Importar planilha<input type="file" id="csvPatInput" accept=".csv,.xlsx,.xls,text/csv" style="display:none"></label>'
+    +'<label class="file-btn">'+icon('upload')+' Importar PDF<input type="file" id="pdfPatInput" accept=".pdf,application/pdf" style="display:none"></label>'
     +'<button class="btn-primary" id="addPatientBtn">'+icon('plus')+' Adicionar paciente</button>'
     +'</div></div>'
     +'<input type="text" id="patientSearch" placeholder="Buscar por nome ou telefone" class="search-input">'
     +'<div class="patient-list" id="patientList">'+renderPatientRows(state.patients)+'</div>';
+}
+function renderPdfReviewScreen(){
+  const rows=pdfReviewRows.map((r,i)=>
+    '<div class="review-row"><input type="checkbox" data-reviewtoggle="'+i+'" '+(r.selected?'checked':'')+'>'
+    +'<input type="text" data-reviewname="'+i+'" value="'+escapeHTML(r.name)+'" placeholder="Nome">'
+    +'<input type="text" data-reviewphone="'+i+'" value="'+escapeHTML(r.phone)+'" placeholder="Telefone">'
+    +'</div>'
+  ).join('');
+  return '<h2>Revisar importação do PDF</h2>'
+    +'<p class="hint">Tentamos identificar nome e telefone em cada linha — corrija o que precisar e desmarque o que não for paciente antes de confirmar.</p>'
+    +'<div class="review-list">'+(rows || '<p class="empty-note">Não consegui identificar nenhuma linha nesse PDF.</p>')+'</div>'
+    +'<div class="modal-actions" style="position:static;margin-top:16px;justify-content:flex-start;">'
+    +'<button class="ghost-btn" id="pdfReviewCancel">Cancelar</button>'
+    +'<button class="btn-primary" id="pdfReviewConfirm">'+icon('check')+' Importar selecionados</button>'
+    +'</div>';
 }
 function campaignMessageEditor(type, hint){
   return '<label style="margin-top:14px;">Mensagem ('+hint+')<textarea class="campaign-msg-input" data-campaignmsg="'+type+'" rows="3">'+escapeHTML(currentClinic.campaign_messages[type])+'</textarea></label>'
@@ -1099,7 +1204,9 @@ function renderSettingsTab(){
     +'<div class="avail-list">'+(profRows || '<p class="empty-note">Nenhum profissional cadastrado.</p>')+'</div>'
     +'<div style="display:flex;gap:8px;margin-top:12px;">'
     +'<input type="text" id="newProfInput" placeholder="Nome do profissional" style="flex:1;padding:9px 10px;border:1px solid var(--border);border-radius:8px;">'
-    +'<button class="btn-primary" id="addProfBtn">'+icon('plus')+' Adicionar</button></div>';
+    +'<button class="btn-primary" id="addProfBtn">'+icon('plus')+' Adicionar</button></div>'
+    +'<h3 style="margin-top:28px;">Ajuda</h3>'
+    +'<button class="ghost-btn" id="replayTourBtn">'+icon('sparkle')+' Ver tutorial novamente</button>';
 }
 
 /* ---------- Render: client flow ---------- */
@@ -1372,6 +1479,14 @@ document.addEventListener('click', async (e)=>{
     render();
     return;
   }
+  if(t.id==='tourNext'){
+    if(tourStep<TOUR_STEPS.length-1){ tourStep++; openModal(renderTourStep()); }
+    else{ await finishTour(); }
+    return;
+  }
+  if(t.id==='tourBack'){ tourStep=Math.max(0,tourStep-1); openModal(renderTourStep()); return; }
+  if(t.id==='tourSkip'){ await finishTour(); return; }
+  if(t.id==='replayTourBtn'){ tourStep=0; openModal(renderTourStep()); return; }
 
   if(el=byData('data-mode')){
     if(el.dataset.mode==='admin' && publicClinicSlug){ window.location.href=window.location.origin+window.location.pathname; return; }
@@ -1446,6 +1561,16 @@ document.addEventListener('click', async (e)=>{
     const r=await loadStandardProcedures();
     render();
     showToast(r.added+' procedimento(s) padrão adicionados'+(r.skipped?', '+r.skipped+' já existiam':'')+'.');
+    return;
+  }
+  if(t.id==='pdfReviewCancel'){ pdfReviewRows=null; render(); return; }
+  if(t.id==='pdfReviewConfirm'){
+    const selected=pdfReviewRows.filter(r=>r.selected && r.name.trim() && r.phone.trim());
+    const rows=[['Nome','Telefone']].concat(selected.map(r=>[r.name.trim(), r.phone.trim()]));
+    const result=await importPatientsRows(rows);
+    pdfReviewRows=null;
+    render();
+    showToast('Importação concluída: '+result.added+' adicionados, '+result.updated+' atualizados.');
     return;
   }
   if(el=byData('data-patientsview')){ patientsView=el.dataset.patientsview; render(); return; }
@@ -1536,7 +1661,7 @@ document.addEventListener('click', async (e)=>{
     return;
   }
   if(t.id==='showPatTemplateBtn'){
-    openModal('<h3>Formatos aceitos</h3><p class="hint">Você pode importar direto o CSV de cadastro de pacientes do SaudeViaNet (com colunas como <strong>Nome</strong>, <strong>Telefone principal</strong>, <strong>CPF</strong> etc.), ou uma planilha simples com duas colunas:</p><textarea readonly class="template-textarea" onclick="this.select()">nome,telefone\nMaria Silva,71999998888</textarea><div class="modal-actions"><button id="modal-close-only" class="btn-primary">Fechar</button></div>');
+    openModal('<h3>Formatos aceitos</h3><p class="hint">Em "Importar planilha": CSV ou Excel (.xlsx) — direto do cadastro de pacientes do SaudeViaNet (colunas como <strong>Nome</strong>, <strong>Telefone principal</strong>, <strong>CPF</strong> etc.), ou uma planilha simples com duas colunas:</p><textarea readonly class="template-textarea" onclick="this.select()">nome,telefone\nMaria Silva,71999998888</textarea><p class="hint">Em "Importar PDF": funciona como um assistente — extraímos o texto e sugerimos nome/telefone de cada linha, mas você revisa e confirma antes de qualquer coisa entrar no sistema.</p><div class="modal-actions"><button id="modal-close-only" class="btn-primary">Fechar</button></div>');
     return;
   }
 
@@ -1623,23 +1748,35 @@ document.addEventListener('change', async (e)=>{
     await sb.from('clinics').update({availability:currentClinic.availability}).eq('id', currentClinic.id);
     return;
   }
+  if(t.dataset.reviewtoggle!==undefined){ pdfReviewRows[Number(t.dataset.reviewtoggle)].selected=t.checked; return; }
   if(t.id==='csvPatInput'){
     const file=t.files[0]; if(!file) return;
-    try{ const text=await file.text(); const r=await importPatientsCSV(text); render();
+    try{ const r=await importPatientsFile(file); render();
       showToast(r.error ? 'Não consegui ler esse arquivo.' : ('Importação concluída: '+r.added+' adicionados, '+r.updated+' atualizados.'));
-    }catch(err){ showToast('Não foi possível ler esse arquivo. Confira se é um .csv.'); }
+    }catch(err){ showToast('Não foi possível ler esse arquivo. Confira o formato (.csv, .xlsx).'); }
     return;
   }
   if(t.id==='csvProcInput'){
     const file=t.files[0]; if(!file) return;
-    try{ const text=await file.text(); const r=await importProceduresCSV(text); render();
+    try{ const r=await importProceduresFile(file); render();
       showToast(r.error ? 'Não consegui ler esse arquivo.' : ('Importação concluída: '+r.added+' adicionados, '+r.updated+' atualizados.'));
-    }catch(err){ showToast('Não foi possível ler esse arquivo. Confira se é um .csv.'); }
+    }catch(err){ showToast('Não foi possível ler esse arquivo. Confira o formato (.csv, .xlsx).'); }
+    return;
+  }
+  if(t.id==='pdfPatInput'){
+    const file=t.files[0]; if(!file) return;
+    try{
+      const lines=await extractPdfText(file);
+      pdfReviewRows=linesToReviewRows(lines);
+      render();
+    }catch(err){ showToast('Não consegui ler esse PDF.'); }
     return;
   }
 });
 
 document.addEventListener('input', (e)=>{
+  if(e.target.dataset.reviewname!==undefined){ pdfReviewRows[Number(e.target.dataset.reviewname)].name=e.target.value; return; }
+  if(e.target.dataset.reviewphone!==undefined){ pdfReviewRows[Number(e.target.dataset.reviewphone)].phone=e.target.value; return; }
   if(e.target.id==='na-name'){
     const match=state.patients.find(p=>p.name===e.target.value);
     const phoneInput=document.getElementById('na-phone');
