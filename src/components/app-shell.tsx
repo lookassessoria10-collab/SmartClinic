@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+import { signOut } from "@/modules/auth/actions";
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import { CalendarDays, Check, ChevronsUpDown, FlaskConical, Home, LogOut, RotateCcw, Settings2, Users, Wallet, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -180,7 +181,6 @@ function OrgSwitcher({ name, compact }: { name: string; compact?: boolean }) {
 }
 
 function UserMenu({ name, role, color, compact }: { name: string; role: Role; color?: number; compact?: boolean }) {
-  const router = useRouter();
   return (
     <Menu.Root>
       <Menu.Trigger className="flex w-full items-center gap-2.5 rounded-sm p-1.5 text-left hover:bg-white/60" aria-label={`Conta: ${name}, ${ROLE_LABEL[role]}`}>
@@ -192,7 +192,7 @@ function UserMenu({ name, role, color, compact }: { name: string; role: Role; co
       </Menu.Trigger>
       <MenuContent>
         <Menu.Label className="px-2 py-1.5 text-caption text-ink-3">{name}</Menu.Label>
-        <MenuItem onSelect={() => router.push("/login")}>
+        <MenuItem onSelect={() => void signOut()}>
           <LogOut className="size-4" aria-hidden /> Sair
         </MenuItem>
       </MenuContent>

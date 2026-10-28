@@ -25,6 +25,8 @@ Status: **Proposta** até a aprovação da Fase 1; depois **Aceita**. Mudanças 
 | 017 | Nenhum privilégio padrão: as migrações revogam os padrões do Supabase para `anon`/`authenticated` e cada tabela/função recebe GRANT explícito; o teste `00_schema_guards` falha se algo novo ficar exposto | Alinhado à mudança do Supabase de 30/10/2026 (tabelas novas não expostas automaticamente) e ao princípio de menor privilégio | Confiar no padrão do provedor |
 | 018 | `audit_logs.organization_id` sem chave estrangeira | O registro precisa sobreviver à exclusão da clínica (retenção de 5 anos) | FK com `on delete set null` (perderia a ligação) |
 | 019 | Gatilho de "último gestor" imediato, não adiado | Testável dentro de transação; trocar de gestor = promover antes de rebaixar | Gatilho adiado até o commit |
+| 020 | Links de e-mail do Auth apontam para `/auth/confirm?token_hash=…` (modelos próprios em `supabase/templates/`) e a sessão é criada no servidor com `verifyOtp` | Funciona com cookies httpOnly e sem JavaScript no navegador; textos em português | Link padrão do Supabase (fluxo no navegador) |
+| 021 | Limite de tentativas de login próprio, contado em `audit_logs` (5 por e-mail / 30 por IP em 15 min), com e-mail e IP guardados só como hash SHA-256 | Reaproveita a trilha de auditoria; não guarda dado pessoal em claro; complementa o limite do Supabase | Tabela separada; serviço externo (custo) |
 
 ## Parte B — Decisões que exigem sua aprovação
 

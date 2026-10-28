@@ -11,7 +11,9 @@
 | 2. Migrações 0001–0007 | ✅ Aplicadas no banco local (2026-10-28). Corrigidos 2 erros revelados na execução: tipo do papel na carga de permissões; EXECUTE padrão do Postgres para PUBLIC (só removível na forma global) |
 | 3. Testes pgTAP | ✅ **87/87 passando.** Teste de mutação: com o isolamento quebrado de propósito, os testes de isolamento falharam como esperado |
 | Seed local | ✅ 2 clínicas fictícias e 5 usuários de teste (`supabase/seed.sql`). Login real verificado no Auth local; pela API, a recepção vê só a própria clínica e nenhum convite; `anon` recebe 401 |
-| 4–10 | ⏳ Não iniciados |
+| 4. Clientes, proxy, autorização | ✅ `src/server/supabase.ts` (sessão do usuário, RLS sempre ativa), `src/server/admin/` (chave secreta, `server-only`), `src/proxy.ts`, `src/server/auth.ts` (`getCurrentUser`, `requireMember` → 404 para não membros, `requirePermission`). Tipos gerados do schema (`npm run db:types`) |
+| 5. Cadastro, confirmação, login, sair, redefinição | ✅ Testado no navegador contra o Supabase local (2026-10-28): área protegida sem login → `/login?next=`; senha errada → mensagem genérica; login → volta ao destino; sair → sessão encerrada; cadastro → e-mail (Mailpit) → link → onboarding; link reutilizado → recusado; redefinição: e-mail inexistente recebe a mesma resposta e nenhum e-mail sai; nova senha vale e a antiga não; 5 falhas → bloqueio de 15 min mesmo com a senha certa. Falhas e logins na auditoria (e-mail/IP só como hash). Chave secreta ausente do bundle |
+| 6–10 | ⏳ Não iniciados. **Atenção:** até o passo 6, as telas da clínica ainda usam os dados de demonstração (D-18) — o nome exibido e o seletor de perfil não são do usuário logado, e o onboarding ainda não cria a clínica no banco |
 
 **Ambiente desta máquina:** 7,2 GB de RAM e disco que chegou a encher. `npm run db:start` sobe só
 banco, Auth, API e Mailpit (sem Studio, Storage, Realtime). Feche apps pesados antes de usar.
