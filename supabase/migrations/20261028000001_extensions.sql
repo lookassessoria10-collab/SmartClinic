@@ -15,6 +15,9 @@ grant usage on schema app to authenticated;
 -- Nada criado daqui em diante fica acessível sem um GRANT explícito na própria migração.
 -- O Supabase concede, por padrão, acesso de anon/authenticated a objetos novos em `public`;
 -- revogar só de PUBLIC não basta, por isso os papéis são citados um a um.
+-- O EXECUTE para PUBLIC é um padrão GLOBAL do Postgres: só a forma sem `in schema` o remove
+-- (detectado pelo teste 00_schema_guards).
+alter default privileges for role postgres revoke execute on functions from public;
 alter default privileges in schema public revoke execute on functions from public, anon, authenticated;
 alter default privileges in schema app revoke execute on functions from public, anon, authenticated;
 alter default privileges for role postgres in schema public revoke execute on functions from public, anon, authenticated;

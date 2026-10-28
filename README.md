@@ -19,9 +19,16 @@ npm run lint
 Banco local (Fase 3, requer Docker Desktop):
 
 ```bash
-npm run db:start   # sobe o Supabase local e aplica supabase/migrations
+npm run db:start   # sobe banco, Auth, API e Mailpit locais e aplica supabase/migrations
+npm run db:reset   # recria o banco do zero com migrações + dados fictícios (supabase/seed.sql)
 npm run db:test    # testes pgTAP de isolamento e permissões
+npm run db:stop    # desliga tudo e libera memória
 ```
+
+Usuários de teste locais (senha `Teste@12345`, só existe no banco local): `ana@clinica-aurora.test`
+(gestora), `bruno@clinica-aurora.test` (recepção), `carla@clinica-aurora.test` (profissional),
+`beto@espaco-lumi.test` (outra clínica), `suporte@plataforma.test` (admin da plataforma).
+E-mails enviados localmente aparecem no Mailpit: http://127.0.0.1:54324
 
 | Rota | O que demonstra |
 |------|-----------------|

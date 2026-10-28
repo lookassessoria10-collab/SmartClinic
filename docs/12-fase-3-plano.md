@@ -8,9 +8,13 @@
 |-------|----------|
 | Verificação da documentação (§6) | ✅ Chaves publishable/secret confirmadas; `getClaims()` no servidor; `proxy.ts` no Next 16; tabelas novas exigem GRANT explícito a partir de 30/10/2026; e-mail padrão do Supabase só entrega para a equipe do projeto (2/h) → D-16 necessária para convites em staging |
 | 1. Git, estrutura, CI | ✅ Repositório local; `supabase/` inicializado (senha ≥ 10, confirmação de e-mail, MFA TOTP); CI em `.github/workflows/ci.yml`; `.env.example` |
-| 2. Migrações 0001–0007 | ✍️ Escritas — **ainda não executadas** (falta o Docker Desktop) |
-| 3. Testes pgTAP | ✍️ Escritos (`supabase/tests/database/`) — **ainda não executados** |
+| 2. Migrações 0001–0007 | ✅ Aplicadas no banco local (2026-10-28). Corrigidos 2 erros revelados na execução: tipo do papel na carga de permissões; EXECUTE padrão do Postgres para PUBLIC (só removível na forma global) |
+| 3. Testes pgTAP | ✅ **87/87 passando.** Teste de mutação: com o isolamento quebrado de propósito, os testes de isolamento falharam como esperado |
+| Seed local | ✅ 2 clínicas fictícias e 5 usuários de teste (`supabase/seed.sql`). Login real verificado no Auth local; pela API, a recepção vê só a própria clínica e nenhum convite; `anon` recebe 401 |
 | 4–10 | ⏳ Não iniciados |
+
+**Ambiente desta máquina:** 7,2 GB de RAM e disco que chegou a encher. `npm run db:start` sobe só
+banco, Auth, API e Mailpit (sem Studio, Storage, Realtime). Feche apps pesados antes de usar.
 > Base: [02-arquitetura](02-arquitetura.md), [03-modelo-de-dados](03-modelo-de-dados.md),
 > [04-perfis-e-permissoes](04-perfis-e-permissoes.md), [09-seguranca-e-lgpd](09-seguranca-e-lgpd.md).
 

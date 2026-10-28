@@ -43,7 +43,7 @@ create table public.role_permissions (
 );
 
 insert into public.role_permissions (role, permission)
-select 'manager', p from unnest(array[
+select 'manager'::public.member_role, p from unnest(array[
   'schedule.view_all',
   'appointments.read', 'appointments.read_own', 'appointments.write', 'appointments.write_own',
   'appointments.set_status', 'appointments.set_status_own',
@@ -55,7 +55,7 @@ select 'manager', p from unnest(array[
   'members.manage', 'org.settings', 'data.import', 'data.export', 'audit.read'
 ]) p
 union all
-select 'reception', p from unnest(array[
+select 'reception'::public.member_role, p from unnest(array[
   'schedule.view_all',
   'appointments.read', 'appointments.write', 'appointments.set_status',
   'booking_requests.review', 'availability.manage',
@@ -63,7 +63,7 @@ select 'reception', p from unnest(array[
   'finance.write'
 ]) p
 union all
-select 'professional', p from unnest(array[
+select 'professional'::public.member_role, p from unnest(array[
   'schedule.view_all',
   'appointments.read_own', 'appointments.write_own', 'appointments.set_status_own',
   'booking_requests.review_own', 'availability.manage_own',
