@@ -19,11 +19,18 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # docs/13: dependências de produção com falha alta/crítica conhecida barram o merge.
+      - run: npm audit --audit-level=high --omit=dev
       - run: npx next typegen
       - run: npx tsc --noEmit
       - run: npm run lint
       - run: npm test
+      # O build não conecta ao Supabase; só precisa que as variáveis públicas existam.
       - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder_ci
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
       # docs/09 S2: a chave secreta nunca pode chegar ao navegador.
       - name: Chave secreta fora do bundle do cliente
         run: |
@@ -42,3 +49,37 @@ jobs:
           version: 2.122.0
       - run: supabase db start
       - run: supabase test db
+
+  e2e:
+    name: Ponta a ponta (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - run: npm ci
+      - run: supabase start -x studio,imgproxy,vector,logflare,realtime,storage-api,edge-runtime,supavisor,postgres-meta
+      # Chaves do Supabase local (valores de demonstração, iguais em toda máquina).
+      - name: Gera .env.local
+        run: |
+          eval "$(supabase status -o env)"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY"
+            echo "SUPABASE_SECRET_KEY=$SECRET_KEY"
+            echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000"
+          } > .env.local
+      - run: npx playwright install --with-deps --no-shell chromium
+      - run: npm run build
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

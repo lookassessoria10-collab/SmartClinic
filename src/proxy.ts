@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { LAST_CLINIC_COOKIE } from "@/modules/auth/constants";
+import { hardenSessionCookie } from "@/lib/session-cookie";
 
 /**
  * Proxy (Next 16; antigo middleware). Duas tarefas apenas (docs/12 §3.1):
@@ -24,7 +25,7 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           // ...e para o navegador, sem cache (a sessão de um não pode ir para outro).
           response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, hardenSessionCookie(options)));
           Object.entries(headers).forEach(([key, value]) => response.headers.set(key, value));
         },
       },

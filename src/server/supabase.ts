@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { publicEnv } from "@/lib/env";
+import { hardenSessionCookie } from "@/lib/session-cookie";
 import type { Database } from "./database.types";
 
 /**
@@ -15,7 +16,7 @@ export async function createSupabaseServerClient() {
       getAll: () => cookieStore.getAll(),
       setAll(cookiesToSet) {
         try {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, hardenSessionCookie(options)));
         } catch {
           // Chamado de um Server Component, que não pode gravar cookies. Sem problema:
           // o proxy.ts renova a sessão (e envia os cabeçalhos anti-cache) a cada requisição.

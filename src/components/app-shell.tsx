@@ -157,14 +157,16 @@ function OrgSwitcher({ session, compact }: { session: ClinicSession; compact?: b
           "flex h-12 w-full items-center gap-2.5 rounded-sm px-1.5 text-left hover:bg-white/60",
           !compact && "justify-center lg:justify-start",
         )}
-        aria-label={`Clínica atual: ${name}. Trocar de clínica`}
       >
+        {/* Nome acessível = texto visível + complemento só para leitor de tela (WCAG 2.5.3). */}
         <span className="grid size-9 shrink-0 place-items-center rounded-sm bg-accent text-body-sm font-semibold text-on-accent" aria-hidden>
           {name[0]}
         </span>
-        <span className={cn("min-w-0 flex-1", !compact && "hidden lg:block")}>
+        <span className={cn("min-w-0 flex-1", !compact && "sr-only lg:not-sr-only lg:block")}>
+          <span className="sr-only">Clínica atual: </span>
           <span className="block truncate text-body-sm font-semibold">{name}</span>
           <span className="block text-caption text-ink-3">{ROLE_LABEL[session.role]}</span>
+          <span className="sr-only"> — trocar de clínica</span>
         </span>
         <ChevronsUpDown className={cn("size-4 text-ink-3", !compact && "hidden lg:block")} aria-hidden />
       </Menu.Trigger>
@@ -199,9 +201,10 @@ function OrgSwitcher({ session, compact }: { session: ClinicSession; compact?: b
 function UserMenu({ name, email, role, accountHref, compact }: { name: string; email: string | null; role: Role; accountHref: string; compact?: boolean }) {
   return (
     <Menu.Root>
-      <Menu.Trigger className="flex w-full items-center gap-2.5 rounded-sm p-1.5 text-left hover:bg-white/60" aria-label={`Conta: ${name}, ${ROLE_LABEL[role]}`}>
+      <Menu.Trigger className="flex w-full items-center gap-2.5 rounded-sm p-1.5 text-left hover:bg-white/60">
         <Avatar name={name} />
-        <span className={cn("min-w-0 flex-1", compact ? "hidden" : "hidden lg:block")}>
+        <span className={cn("min-w-0 flex-1", compact ? "sr-only" : "sr-only lg:not-sr-only lg:block")}>
+          <span className="sr-only">Conta: </span>
           <span className="block truncate text-body-sm font-medium">{name}</span>
           <span className="block text-caption text-ink-3">{ROLE_LABEL[role]}</span>
         </span>
