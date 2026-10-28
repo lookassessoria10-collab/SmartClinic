@@ -14,23 +14,26 @@ import { Button } from "@/ui/button";
 import { useToast } from "@/ui/toast";
 import { cap, dayLabel, expiresIn, fmt, money, time } from "@/lib/format";
 import { quickApprove } from "@/components/request-actions";
+import { useSession } from "@/components/session-context";
 import { cn } from "@/lib/cn";
 
 export default function InicioPage() {
   const db = useDb();
+  const session = useSession();
   if (!db) return null;
   const greeting = (() => {
     const h = new Date().getHours();
     return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
   })();
-  const first = db.viewer.name.replace(/^(Dra?\.)\s/, "").split(" ")[0];
+  // Nome e papel são os reais (sessão); os blocos abaixo ainda mostram dados de demonstração (D-18).
+  const first = session.user.name.replace(/^(Dra?\.)\s/, "").split(" ")[0];
 
   return (
     <>
       <PageHeader title={`${greeting}, ${first}`} description={cap(fmt(new Date(), "EEEE, d 'de' MMMM"))} />
-      {db.viewer.role === "reception" && <ReceptionHome db={db} />}
-      {db.viewer.role === "professional" && <ProfessionalHome db={db} />}
-      {db.viewer.role === "manager" && <ManagerHome db={db} />}
+      {session.role === "reception" && <ReceptionHome db={db} />}
+      {session.role === "professional" && <ProfessionalHome db={db} />}
+      {session.role === "manager" && <ManagerHome db={db} />}
     </>
   );
 }

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { createSupabaseAdminClient } from "@/server/admin/supabase-admin";
 import { getMyMemberships } from "@/server/auth";
+import { LAST_CLINIC_COOKIE } from "./constants";
 
 /*
  * Limite de tentativas de login e auditoria de autenticação (docs/12 §3.4, docs/09 S5).
@@ -61,8 +62,6 @@ export async function recordAuthEvent(
   // Falha de auditoria não pode derrubar o login, mas precisa aparecer nos logs do servidor.
   if (error) console.error("[auditoria] falha ao registrar", action, error.message);
 }
-
-export const LAST_CLINIC_COOKIE = "ultima_clinica";
 
 /** Para onde ir depois de entrar: última clínica usada, primeira clínica, ou onboarding. */
 export async function homeAfterLogin(): Promise<string> {

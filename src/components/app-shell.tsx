@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { signOut } from "@/modules/auth/actions";
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { CalendarDays, Check, ChevronsUpDown, FlaskConical, Home, LogOut, RotateCcw, Settings2, Users, Wallet, type LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { CalendarDays, Check, ChevronsUpDown, FlaskConical, Home, LogOut, Plus, RotateCcw, Settings2, Users, Wallet, type LucideIcon } from "lucide-react";
+import { useEffect, type ReactNode } from "react";
 import { actions, select, useDb } from "@/prototype/store";
 import { canAccess, ROLE_LABEL, type Section } from "@/prototype/access";
 import type { Role } from "@/prototype/types";
+import { useSession, type ClinicSession } from "./session-context";
 import { Avatar, EmptyState, Skeleton } from "@/ui/primitives";
 import { Button } from "@/ui/button";
 import { useToast } from "@/ui/toast";
@@ -24,14 +25,22 @@ const NAV: { section: Section; label: string; icon: LucideIcon }[] = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const db = useDb();
+  const session = useSession();
   const { org } = useParams<{ org: string }>();
   const pathname = usePathname();
   const current = (pathname.split("/")[3] ?? "inicio") as Section;
   const base = `/c/${org}`;
 
+  const role = session.role;
+
+  // As telas de agenda/pacientes ainda usam dados de demonstração (D-18): alinha o "visualizador"
+  // desses dados ao papel REAL, para a interface não mostrar mais do que o papel permite.
+  useEffect(() => {
+    if (db && db.viewer.role !== role) actions.setViewer(role);
+  }, [db, role]);
+
   if (!db) return <ShellSkeleton />;
 
-  const role = db.viewer.role;
   const items = NAV.filter((n) => canAccess(role, n.section));
   const pending = select.pendingRequests(db).length;
 
@@ -40,11 +49,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <a href="#conteudo" className="sr-only z-[70] rounded-sm bg-surface px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         Pular para o conteúdo
       </a>
-      <PrototypeBar role={role} />
+      <DemoDataBar />
 
       {/* Barra lateral (desktop/tablet) */}
       <aside className="glass fixed top-10 bottom-3 left-3 z-20 hidden w-[76px] flex-col rounded-lg border p-2 md:flex lg:w-[240px] lg:p-3">
-        <OrgSwitcher name={db.org.name} />
+        <OrgSwitcher session={session} />
         <nav aria-label="Principal" className="mt-4 flex flex-col gap-1">
           {items.map((n) => {
             const active = current === n.section;
@@ -71,14 +80,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="mt-auto">
-          <UserMenu name={db.viewer.name} role={role} color={db.viewer.professionalId ? select.professional(db, db.viewer.professionalId).color : undefined} />
+          <UserMenu name={session.user.name} email={session.user.email} role={role} />
         </div>
       </aside>
 
       {/* Cabeçalho (celular) */}
       <header className="glass sticky top-8 z-20 mx-2 mt-2 flex h-14 items-center justify-between rounded-lg border px-3 md:hidden">
-        <OrgSwitcher name={db.org.name} compact />
-        <UserMenu name={db.viewer.name} role={role} compact />
+        <OrgSwitcher session={session} compact />
+        <UserMenu name={session.user.name} email={session.user.email} role={role} compact />
       </header>
 
       <main id="conteudo" className="px-4 pt-6 pb-28 md:pt-14 md:pr-6 md:pb-10 md:pl-[100px] lg:pl-[272px]">
@@ -115,26 +124,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-/** Faixa do protótipo: deixa explícito que os dados são fictícios e permite trocar de perfil. */
-function PrototypeBar({ role }: { role: Role }) {
+/** Avisa que agenda e pacientes ainda usam dados de demonstração (D-18) e permite restaurá-los. */
+function DemoDataBar() {
   const toast = useToast();
   return (
     <div className="sticky top-0 z-30 flex h-8 items-center justify-center gap-2 bg-ink px-3 text-caption text-white md:fixed md:inset-x-0">
       <FlaskConical className="size-3.5 shrink-0" aria-hidden />
-      <span className="hidden sm:inline">Protótipo · dados fictícios ·</span>
-      <label htmlFor="viewer" className="sr-only sm:not-sr-only">
-        Visualizar como
-      </label>
-      <select
-        id="viewer"
-        value={role}
-        onChange={(e) => actions.setViewer(e.target.value as Role)}
-        className="h-6 rounded-xs bg-white/15 px-1.5 text-caption text-white [&>option]:text-ink"
-      >
-        <option value="reception">Recepção (Bruno)</option>
-        <option value="professional">Profissional (Carla)</option>
-        <option value="manager">Gestora e dentista (Ana)</option>
-      </select>
+      <span>
+        <span className="hidden sm:inline">Login e clínica reais · </span>agenda e pacientes com dados de demonstração
+      </span>
       <button
         onClick={() => {
           actions.reset();
@@ -144,13 +142,14 @@ function PrototypeBar({ role }: { role: Role }) {
       >
         <RotateCcw className="size-3.5" aria-hidden />
         <span className="hidden sm:inline">Restaurar</span>
-        <span className="sr-only sm:hidden">Restaurar dados</span>
+        <span className="sr-only sm:hidden">Restaurar dados de demonstração</span>
       </button>
     </div>
   );
 }
 
-function OrgSwitcher({ name, compact }: { name: string; compact?: boolean }) {
+function OrgSwitcher({ session, compact }: { session: ClinicSession; compact?: boolean }) {
+  const { name, slug } = session.organization;
   return (
     <Menu.Root>
       <Menu.Trigger
@@ -165,33 +164,53 @@ function OrgSwitcher({ name, compact }: { name: string; compact?: boolean }) {
         </span>
         <span className={cn("min-w-0 flex-1", !compact && "hidden lg:block")}>
           <span className="block truncate text-body-sm font-semibold">{name}</span>
-          <span className="block text-caption text-ink-3">Unidade principal</span>
+          <span className="block text-caption text-ink-3">{ROLE_LABEL[session.role]}</span>
         </span>
         <ChevronsUpDown className={cn("size-4 text-ink-3", !compact && "hidden lg:block")} aria-hidden />
       </Menu.Trigger>
       <MenuContent>
         <Menu.Label className="px-2 py-1.5 text-caption text-ink-3">Suas clínicas</Menu.Label>
-        <MenuItem>
-          <Check className="size-4 text-accent" aria-hidden /> {name}
-        </MenuItem>
-        <MenuItem disabled>Espaço Bem-Estar (exemplo)</MenuItem>
+        {session.clinics.map((c) => (
+          <Menu.Item key={c.slug} asChild>
+            <Link
+              href={`/c/${c.slug}/inicio`}
+              aria-current={c.slug === slug ? "true" : undefined}
+              className="flex min-h-10 items-center gap-2 rounded-sm px-2 py-1.5 text-body-sm outline-none data-[highlighted]:bg-accent-subtle"
+            >
+              <Check className={cn("size-4 shrink-0 text-accent", c.slug !== slug && "invisible")} aria-hidden />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">{c.name}</span>
+                <span className="block text-caption text-ink-3">{ROLE_LABEL[c.role]}</span>
+              </span>
+            </Link>
+          </Menu.Item>
+        ))}
+        <Menu.Separator className="my-1 h-px bg-line" />
+        <Menu.Item asChild>
+          <Link href="/onboarding" className="flex h-10 items-center gap-2 rounded-sm px-2 text-body-sm outline-none data-[highlighted]:bg-accent-subtle">
+            <Plus className="size-4 text-ink-2" aria-hidden /> Criar outra clínica
+          </Link>
+        </Menu.Item>
       </MenuContent>
     </Menu.Root>
   );
 }
 
-function UserMenu({ name, role, color, compact }: { name: string; role: Role; color?: number; compact?: boolean }) {
+function UserMenu({ name, email, role, compact }: { name: string; email: string | null; role: Role; compact?: boolean }) {
   return (
     <Menu.Root>
       <Menu.Trigger className="flex w-full items-center gap-2.5 rounded-sm p-1.5 text-left hover:bg-white/60" aria-label={`Conta: ${name}, ${ROLE_LABEL[role]}`}>
-        <Avatar name={name} color={color} />
+        <Avatar name={name} />
         <span className={cn("min-w-0 flex-1", compact ? "hidden" : "hidden lg:block")}>
           <span className="block truncate text-body-sm font-medium">{name}</span>
           <span className="block text-caption text-ink-3">{ROLE_LABEL[role]}</span>
         </span>
       </Menu.Trigger>
       <MenuContent>
-        <Menu.Label className="px-2 py-1.5 text-caption text-ink-3">{name}</Menu.Label>
+        <Menu.Label className="px-2 py-1.5">
+          <span className="block text-body-sm font-medium">{name}</span>
+          {email && <span className="block text-caption text-ink-3">{email}</span>}
+        </Menu.Label>
         <MenuItem onSelect={() => void signOut()}>
           <LogOut className="size-4" aria-hidden /> Sair
         </MenuItem>

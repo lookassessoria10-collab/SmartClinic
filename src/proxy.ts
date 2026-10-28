@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { LAST_CLINIC_COOKIE } from "@/modules/auth/constants";
 
 /**
  * Proxy (Next 16; antigo middleware). Duas tarefas apenas (docs/12 §3.1):
@@ -43,6 +44,12 @@ export async function proxy(request: NextRequest) {
     // Mantém cookies de sessão limpas/renovadas também no redirecionamento.
     response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
     return redirect;
+  }
+
+  // Lembra a última clínica aberta para o pós-login (só o slug; o acesso é checado no layout).
+  const clinic = signedIn ? /^\/c\/([a-z0-9-]{3,48})(\/|$)/.exec(pathname)?.[1] : undefined;
+  if (clinic && request.cookies.get(LAST_CLINIC_COOKIE)?.value !== clinic) {
+    response.cookies.set(LAST_CLINIC_COOKIE, clinic, { path: "/", sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
   }
 
   return response;

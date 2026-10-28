@@ -1,15 +1,44 @@
-import { Suspense } from "react";
+import { connection } from "next/server";
+import { Suspense, type ReactNode } from "react";
 import { AppShell, ShellSkeleton } from "@/components/app-shell";
+import { SessionProvider, type ClinicSession } from "@/components/session-context";
+import { getMyMemberships, getMyProfile, requireMember } from "@/server/auth";
 
-// Protótipo: os dados vivem no localStorage, então não há conteúdo para pré-renderizar.
-// Na Fase 3 (dados no servidor) esta exceção sai e a validação de navegação instantânea volta.
+// Toda a área da clínica depende de quem está logado: não há casca útil para pré-renderizar
+// além do esqueleto. Por isso fica fora da validação de navegação instantânea (ADR-013).
+// Revisitar na Fase 4, quando as telas passarem a ser renderizadas no servidor.
 export const instant = false;
 
-// O slug da clínica só é conhecido na requisição: o Suspense permite pré-renderizar o esqueleto.
-export default function ClinicLayout({ children }: LayoutProps<"/c/[org]">) {
+// A sessão e o slug só existem na requisição: o esqueleto aparece de imediato e o
+// conteúdo autenticado chega em streaming dentro do Suspense (Next 16, cacheComponents).
+export default function ClinicLayout({ children, params }: LayoutProps<"/c/[org]">) {
   return (
     <Suspense fallback={<ShellSkeleton />}>
-      <AppShell>{children}</AppShell>
+      <ClinicFrame params={params}>{children}</ClinicFrame>
     </Suspense>
+  );
+}
+
+async function ClinicFrame({ params, children }: { params: Promise<{ org: string }>; children: ReactNode }) {
+  // Marca explicitamente como "da requisição": o cliente Supabase consulta o relógio
+  // (validade do token) e isso não pode acontecer durante a pré-renderização.
+  await connection();
+  const { org } = await params;
+  // 404 para quem não é membro ativo desta clínica (mesma resposta de slug inexistente).
+  const ctx = await requireMember(org);
+  const [profile, memberships] = await Promise.all([getMyProfile(), getMyMemberships()]);
+
+  const session: ClinicSession = {
+    user: { id: ctx.user.id, name: profile?.fullName ?? ctx.user.email ?? "Você", email: ctx.user.email },
+    organization: { id: ctx.organization.id, slug: ctx.organization.slug, name: ctx.organization.name, writable: ctx.writable },
+    role: ctx.role,
+    permissions: [...ctx.permissions],
+    clinics: memberships.map((m) => ({ slug: m.slug, name: m.name, role: m.role })),
+  };
+
+  return (
+    <SessionProvider value={session}>
+      <AppShell>{children}</AppShell>
+    </SessionProvider>
   );
 }

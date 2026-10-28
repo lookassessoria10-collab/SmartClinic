@@ -33,6 +33,15 @@ export async function requireUser(next?: string): Promise<CurrentUser> {
   return user;
 }
 
+/** Nome de exibição da pessoa logada (tabela profiles, criada junto com o usuário). */
+export const getMyProfile = cache(async (): Promise<{ fullName: string } | null> => {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle();
+  return data ? { fullName: data.full_name } : null;
+});
+
 export interface MembershipSummary {
   organizationId: string;
   slug: string;
