@@ -47,7 +47,17 @@ export async function isLoginThrottled(email: string): Promise<boolean> {
 }
 
 export async function recordAuthEvent(
-  action: "auth.login_failed" | "auth.login" | "auth.logout" | "auth.signup" | "auth.password_reset_requested" | "auth.password_changed",
+  action:
+    | "auth.login_failed"
+    | "auth.login"
+    | "auth.logout"
+    | "auth.signup"
+    | "auth.password_reset_requested"
+    | "auth.password_changed"
+    | "auth.mfa_verified"
+    | "auth.mfa_failed"
+    | "auth.mfa_enabled"
+    | "auth.mfa_disabled",
   opts: { email?: string; userId?: string } = {},
 ) {
   const admin = createSupabaseAdminClient();

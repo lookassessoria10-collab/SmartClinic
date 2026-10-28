@@ -36,14 +36,24 @@ export async function proxy(request: NextRequest) {
   const signedIn = Boolean(data?.claims?.sub);
 
   const { pathname, search } = request.nextUrl;
-  if (!signedIn && PROTECTED.some((re) => re.test(pathname))) {
+  const isProtected = PROTECTED.some((re) => re.test(pathname));
+  const goTo = (target: string) => {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = target;
     url.search = `?next=${encodeURIComponent(pathname + search)}`;
     const redirect = NextResponse.redirect(url);
     // Mantém cookies de sessão limpas/renovadas também no redirecionamento.
     response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
     return redirect;
+  };
+
+  if (!signedIn && isProtected) return goTo("/login");
+
+  // MFA ativado e código ainda não informado: só a tela do código. (O banco recusa dados
+  // nesse estado de qualquer forma — migração 0010; isto aqui é a experiência.)
+  if (signedIn && isProtected) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") return goTo("/login/mfa");
   }
 
   // Lembra a última clínica aberta para o pós-login (só o slug; o acesso é checado no layout).

@@ -17,6 +17,8 @@ export type MemberRole = Database["public"]["Enums"]["member_role"];
 export interface CurrentUser {
   id: string;
   email: string | null;
+  /** Tem MFA ativado e ainda não informou o código nesta sessão (aal1 → aal2 pendente). */
+  mfaPending: boolean;
 }
 
 /** Usuário da sessão, com o token validado (getClaims verifica a assinatura). */
@@ -24,12 +26,19 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims?.sub) return null;
-  return { id: data.claims.sub, email: (data.claims.email as string | undefined) ?? null };
+  // Só para a interface decidir para onde mandar a pessoa; o banco exige aal2 por conta própria (0010).
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  return {
+    id: data.claims.sub,
+    email: (data.claims.email as string | undefined) ?? null,
+    mfaPending: aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2",
+  };
 });
 
 export async function requireUser(next?: string): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) redirect(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
+  if (user.mfaPending) redirect(next ? `/login/mfa?next=${encodeURIComponent(next)}` : "/login/mfa");
   return user;
 }
 

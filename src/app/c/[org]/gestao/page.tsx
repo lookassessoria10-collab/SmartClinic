@@ -17,7 +17,7 @@ const AREAS: { icon: LucideIcon; title: string; description: string; phase: numb
   { icon: UsersRound, title: "Equipe", description: "Membros, papéis e convites", phase: 3, path: "equipe" },
   { icon: Upload, title: "Importar e exportar", description: "Planilhas CSV e XLSX", phase: 7 },
   { icon: CreditCard, title: "Assinatura", description: "Plano e limites", phase: 9 },
-  { icon: ScrollText, title: "Auditoria", description: "Quem fez o quê e quando", phase: 3 },
+  { icon: ScrollText, title: "Auditoria", description: "Quem fez o quê e quando", phase: 3, path: "auditoria" },
 ];
 
 export default function GestaoPage() {

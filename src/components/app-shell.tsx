@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { signOut } from "@/modules/auth/actions";
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { CalendarDays, Check, ChevronsUpDown, FlaskConical, Home, LogOut, Plus, RotateCcw, Settings2, Users, Wallet, type LucideIcon } from "lucide-react";
+import { CalendarDays, Check, ChevronsUpDown, FlaskConical, Home, LogOut, Plus, RotateCcw, Settings2, ShieldCheck, Users, Wallet, type LucideIcon } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { actions, select, useDb } from "@/prototype/store";
 import { canAccess, ROLE_LABEL, type Section } from "@/prototype/access";
@@ -80,14 +80,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="mt-auto">
-          <UserMenu name={session.user.name} email={session.user.email} role={role} />
+          <UserMenu name={session.user.name} email={session.user.email} role={role} accountHref={`${base}/conta`} />
         </div>
       </aside>
 
       {/* Cabeçalho (celular) */}
       <header className="glass sticky top-8 z-20 mx-2 mt-2 flex h-14 items-center justify-between rounded-lg border px-3 md:hidden">
         <OrgSwitcher session={session} compact />
-        <UserMenu name={session.user.name} email={session.user.email} role={role} compact />
+        <UserMenu name={session.user.name} email={session.user.email} role={role} accountHref={`${base}/conta`} compact />
       </header>
 
       <main id="conteudo" className="px-4 pt-6 pb-28 md:pt-14 md:pr-6 md:pb-10 md:pl-[100px] lg:pl-[272px]">
@@ -196,7 +196,7 @@ function OrgSwitcher({ session, compact }: { session: ClinicSession; compact?: b
   );
 }
 
-function UserMenu({ name, email, role, compact }: { name: string; email: string | null; role: Role; compact?: boolean }) {
+function UserMenu({ name, email, role, accountHref, compact }: { name: string; email: string | null; role: Role; accountHref: string; compact?: boolean }) {
   return (
     <Menu.Root>
       <Menu.Trigger className="flex w-full items-center gap-2.5 rounded-sm p-1.5 text-left hover:bg-white/60" aria-label={`Conta: ${name}, ${ROLE_LABEL[role]}`}>
@@ -211,6 +211,11 @@ function UserMenu({ name, email, role, compact }: { name: string; email: string 
           <span className="block text-body-sm font-medium">{name}</span>
           {email && <span className="block text-caption text-ink-3">{email}</span>}
         </Menu.Label>
+        <Menu.Item asChild>
+          <Link href={accountHref} className="flex h-10 items-center gap-2 rounded-sm px-2 text-body-sm outline-none data-[highlighted]:bg-accent-subtle">
+            <ShieldCheck className="size-4" aria-hidden /> Minha conta e segurança
+          </Link>
+        </Menu.Item>
         <MenuItem onSelect={() => void signOut()}>
           <LogOut className="size-4" aria-hidden /> Sair
         </MenuItem>

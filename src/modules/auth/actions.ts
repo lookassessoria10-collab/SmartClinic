@@ -40,6 +40,11 @@ export async function signIn(_prev: FormState, formData: FormData): Promise<Form
   await recordAuthEvent("auth.login", { userId: data.user.id });
 
   const next = safeNextPath(formData.get("next"), "");
+  // MFA ativado: a senha abre só o primeiro passo; o código vem na tela seguinte.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+    redirect(next ? `/login/mfa?next=${encodeURIComponent(next)}` : "/login/mfa");
+  }
   redirect(next || (await homeAfterLogin()));
 }
 

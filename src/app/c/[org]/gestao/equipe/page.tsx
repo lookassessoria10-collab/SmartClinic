@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { requireMember } from "@/server/auth";
 import { createSupabaseServerClient } from "@/server/supabase";
 import { TeamManager } from "@/modules/team/components/team-manager";
@@ -9,6 +10,7 @@ export const metadata: Metadata = { title: "Equipe" };
 export const instant = false;
 
 export default async function TeamPage({ params }: PageProps<"/c/[org]/gestao/equipe">) {
+  await connection();
   const { org } = await params;
   const ctx = await requireMember(org);
   if (!ctx.permissions.has("members.manage")) return <NoPermission />;

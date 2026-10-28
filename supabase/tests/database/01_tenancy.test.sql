@@ -183,7 +183,8 @@ select is((select count(*)::int from public.organizations), 0, 'pessoa sem vínc
 select is((select count(*)::int from public.memberships), 0, 'pessoa sem vínculo não vê membros');
 select is((select count(*)::int from public.professionals), 0, 'pessoa sem vínculo não vê profissionais');
 
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","role":"authenticated"}', true);
+-- Admin da plataforma precisa do segundo passo (MFA obrigatório, migração 0010).
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","role":"authenticated","aal":"aal2"}', true);
 select is((select count(*)::int from public.organizations where slug in ('clinica-a', 'clinica-b')), 2,
   'admin da plataforma vê as clínicas (plano/status)');
 select is((select count(*)::int from public.professionals), 0, 'admin da plataforma não vê dados internos das clínicas');
