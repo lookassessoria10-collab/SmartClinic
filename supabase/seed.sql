@@ -1,0 +1,3 @@
+-- Dados fictícios para desenvolvimento local (docs/09 S12: nunca dados reais).
+-- Preenchido no passo 2 da Fase 3, quando o banco local estiver rodando e puder ser testado:
+-- 2 clínicas, 4 usuários de teste (gestora, recepção, profissional, gestor de outra clínica).

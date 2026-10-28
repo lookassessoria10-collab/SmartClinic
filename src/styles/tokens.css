@@ -1,0 +1,74 @@
+/*
+ * Design tokens — fonte única de verdade (docs/06-design-system.md).
+ * Componentes usam somente estes tokens, via utilitários Tailwind mapeados em globals.css.
+ */
+:root {
+  /* Neutros */
+  --color-bg: #ffffff;
+  --color-bg-subtle: #f6f7f9;
+  --color-bg-muted: #eef0f3;
+  --color-border: #e3e6ea;
+  --color-border-strong: #c9ced6;
+  --color-text: #14171c;
+  --color-text-secondary: #4d5562;
+  --color-text-tertiary: #6b7280;
+
+  /* Destaque */
+  --color-accent: #1f6f8b;
+  --color-accent-hover: #185a72;
+  --color-accent-subtle: #e6f1f5;
+  --color-on-accent: #ffffff;
+
+  /* Status */
+  --color-success: #1e7a4c;
+  --color-success-subtle: #e7f4ec;
+  --color-warning: #8a5a00;
+  --color-warning-subtle: #fdf3dc;
+  --color-danger: #b42335;
+  --color-danger-subtle: #fbe9eb;
+  --color-info: #2b5fb8;
+  --color-info-subtle: #e8eefa;
+
+  /* Cores de profissional na agenda: faixa (forte) + fundo (suave) */
+  --agenda-1: #1f6f8b; --agenda-1-bg: #e6f1f5;
+  --agenda-2: #7a4fb5; --agenda-2-bg: #f1ebfa;
+  --agenda-3: #a34a24; --agenda-3-bg: #fbeee7;
+  --agenda-4: #286f46; --agenda-4-bg: #e8f4ec;
+  --agenda-5: #b0306a; --agenda-5-bg: #fbe8f1;
+  --agenda-6: #3d5bc4; --agenda-6-bg: #eaeefb;
+  --agenda-7: #7a6000; --agenda-7-bg: #faf3d9;
+  --agenda-8: #4b5563; --agenda-8-bg: #eef0f3;
+
+  /* Sombras */
+  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(16 24 40 / 0.06), 0 1px 2px rgb(16 24 40 / 0.04);
+  --shadow-md: 0 4px 12px rgb(16 24 40 / 0.08), 0 2px 4px rgb(16 24 40 / 0.04);
+  --shadow-lg: 0 12px 32px rgb(16 24 40 / 0.12), 0 4px 8px rgb(16 24 40 / 0.05);
+  --shadow-focus: 0 0 0 3px rgb(31 111 139 / 0.35);
+
+  /* Vidro */
+  --glass-bg: rgb(255 255 255 / 0.72);
+  --glass-bg-strong: rgb(255 255 255 / 0.86);
+  --glass-blur: saturate(180%) blur(20px);
+  --glass-border: rgb(255 255 255 / 0.6);
+  --glass-highlight: inset 0 1px 0 rgb(31 111 139 / 0.08);
+  --overlay-scrim: rgb(20 23 28 / 0.32);
+
+  /* Movimento */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Agenda */
+  --agenda-hour-height: 64px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 80ms;
+    --duration-slow: 80ms;
+  }
+}
