@@ -196,6 +196,19 @@ isOneToOne: false
 "create_organization":
 { Args: { "p_attends"?: boolean,"p_name": string,"p_onboarding"?: Json,"p_segment": Database["public"]['Enums']["org_segment"],"p_slug": string,"p_specialty"?: string,"p_timezone"?: string }; Returns: string
                            },
+"get_my_invitation":
+{ Args: { "p_token": string }; Returns: {
+              "expires_at": string,"invited_by_name": string,"needs_password": boolean,"organization_name": string,"role": Database["public"]['Enums']["member_role"]
+            }[]
+                           },
+"invitation_email_for_token":
+{ Args: { "p_token": string }; Returns: string
+                           },
+"list_team":
+{ Args: { "p_org": string }; Returns: {
+              "email": string,"full_name": string,"is_professional": boolean,"joined_at": string,"membership_id": string,"role": Database["public"]['Enums']["member_role"],"status": Database["public"]['Enums']["member_status"],"user_id": string
+            }[]
+                           },
 "revoke_invitation":
 { Args: { "p_invitation": string }; Returns: undefined
                            },

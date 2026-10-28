@@ -27,6 +27,8 @@ Status: **Proposta** até a aprovação da Fase 1; depois **Aceita**. Mudanças 
 | 019 | Gatilho de "último gestor" imediato, não adiado | Testável dentro de transação; trocar de gestor = promover antes de rebaixar | Gatilho adiado até o commit |
 | 020 | Links de e-mail do Auth apontam para `/auth/confirm?token_hash=…` (modelos próprios em `supabase/templates/`) e a sessão é criada no servidor com `verifyOtp` | Funciona com cookies httpOnly e sem JavaScript no navegador; textos em português | Link padrão do Supabase (fluxo no navegador) |
 | 021 | Limite de tentativas de login próprio, contado em `audit_logs` (5 por e-mail / 30 por IP em 15 min), com e-mail e IP guardados só como hash SHA-256 | Reaproveita a trilha de auditoria; não guarda dado pessoal em claro; complementa o limite do Supabase | Tabela separada; serviço externo (custo) |
+| 022 | E-mail de convite enviado pelo próprio Supabase Auth: `inviteUserByEmail` para quem não tem conta, link de acesso (`signInWithOtp`, fluxo implícito) para quem tem; ambos terminam em `/convite/<código>`. Conta criada por convite recebe `needs_password: true` nos metadados | Sem provedor extra; o mesmo SMTP do Auth (D-16) serve para tudo. O Supabase grava senha **aleatória** nas contas convidadas, então "senha vazia" não detecta quem precisa criar senha — por isso a marca própria | Enviar por SMTP próprio da aplicação (mais uma integração) |
+| 023 | Funções usadas em `CHECK` precisam de EXECUTE para `authenticated` (migração 0009) | O Postgres avalia `CHECK` com as permissões de quem altera a linha; sem o GRANT, todo UPDATE direto falhava. Lição: para cada regra de "não pode", ter também um teste de "pode" | — |
 
 ## Parte B — Decisões que exigem sua aprovação
 

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+  <body style="margin:0;background:#f6f7f9;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;color:#14171c">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e3e6ea;border-radius:16px;padding:32px">
+          <tr><td>
+            <p style="margin:0 0 4px;font-size:13px;color:#4d5562">Gestão para clínicas</p>
+            <h1 style="margin:0 0 16px;font-size:22px;line-height:28px">Seu link de acesso</h1>
+            <p style="margin:0 0 24px;font-size:15px;line-height:22px;color:#4d5562">Use o botão abaixo para entrar na sua conta {{ .Email }}. Se você recebeu um convite para uma clínica, ele aparecerá em seguida. O link vale por 1 hora e funciona uma vez.</p>
+            <a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email" style="display:inline-block;background:#1f6f8b;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:8px">Entrar</a>
+            <p style="margin:24px 0 0;font-size:13px;line-height:20px;color:#4d5562">Se você não pediu este link, ignore este e-mail: ninguém entra na sua conta sem ele.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>

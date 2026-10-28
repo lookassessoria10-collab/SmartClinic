@@ -23,10 +23,12 @@ insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data, aud, 
   ('00000000-0000-0000-0000-0000000000b1', 'beto@clinica-b.test',   now(), '{"full_name":"Beto Gestor"}',    'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-0000000000c1', 'fora@exemplo.test',     now(), '{"full_name":"Pessoa de Fora"}', 'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-0000000000d1', 'semconfirmar@exemplo.test', null, '{"full_name":"Sem Confirmar"}', 'authenticated', 'authenticated'),
-  ('00000000-0000-0000-0000-0000000000e1', 'suporte@plataforma.test', now(), '{"full_name":"Suporte"}',      'authenticated', 'authenticated');
+  ('00000000-0000-0000-0000-0000000000e1', 'suporte@teste-plataforma.test', now(), '{"full_name":"Suporte"}', 'authenticated', 'authenticated');
 insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-0000000000e1');
 
-select is((select count(*)::int from public.profiles), 7, 'perfil criado automaticamente para cada usuário');
+-- O banco pode já ter dados (seed local, CI): as contagens olham só os registros deste teste.
+select is((select count(*)::int from public.profiles where user_id::text like '00000000-0000-0000-0000-0000000000%'), 7,
+  'perfil criado automaticamente para cada usuário');
 
 -- ---------------------------------------------------------------------------------------
 -- Criação de clínicas
@@ -182,7 +184,8 @@ select is((select count(*)::int from public.memberships), 0, 'pessoa sem víncul
 select is((select count(*)::int from public.professionals), 0, 'pessoa sem vínculo não vê profissionais');
 
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","role":"authenticated"}', true);
-select is((select count(*)::int from public.organizations), 2, 'admin da plataforma vê as clínicas (plano/status)');
+select is((select count(*)::int from public.organizations where slug in ('clinica-a', 'clinica-b')), 2,
+  'admin da plataforma vê as clínicas (plano/status)');
 select is((select count(*)::int from public.professionals), 0, 'admin da plataforma não vê dados internos das clínicas');
 select is((select count(*)::int from public.audit_logs), 0, 'admin da plataforma não lê auditoria das clínicas');
 
@@ -231,6 +234,15 @@ select throws_ok(
 select throws_ok(
   $$ select public.change_member_role((select id from public.memberships where user_id = '00000000-0000-0000-0000-0000000000b1'), 'reception') $$,
   '42501', null, 'gestora de A não mexe em membro de B');
+
+-- Caso positivo (faltava, e escondeu o bug corrigido na 0009): a gestora edita a própria clínica.
+select lives_ok(
+  $$ update public.organizations set name = 'Clínica A Renomeada', phone = '+5511900000000' where slug = 'clinica-a' $$,
+  'gestora renomeia a própria clínica (UPDATE direto, com o CHECK de slug)');
+select is((select name from public.organizations where slug = 'clinica-a'), 'Clínica A Renomeada', 'o novo nome foi gravado');
+select lives_ok(
+  $$ insert into public.units (organization_id, name) values ((select v::uuid from tests.vals where k = 'org_a'), 'Unidade 2') $$,
+  'gestora cria unidade na própria clínica');
 select lives_ok(
   $$ select public.set_member_status((select id from public.memberships where user_id = '00000000-0000-0000-0000-0000000000a2'), 'disabled') $$,
   'gestora desativa a recepção');
