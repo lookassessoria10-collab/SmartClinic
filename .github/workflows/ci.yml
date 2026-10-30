@@ -1,8 +1,9 @@
 name: CI
 
 on:
+  # Todo ramo é testado ao ser enviado (o main publica no site; os outros, não).
   push:
-    branches: [main]
+    branches: ["**", "!dependabot/**"]
   pull_request:
 
 permissions:
