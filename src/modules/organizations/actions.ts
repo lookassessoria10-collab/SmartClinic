@@ -7,6 +7,41 @@ import { requireUser } from "@/server/auth";
 import { fieldErrors, type FieldErrors } from "@/modules/auth/schemas";
 import { LAST_CLINIC_COOKIE } from "@/modules/auth/constants";
 import { onboardingSchema, slugProblem } from "./schemas";
+import { suggestionFor } from "./suggestions";
+
+/**
+ * Transforma as escolhas do onboarding em cadastros reais (Fase 4): os serviços marcados e,
+ * se a pessoa atende, o vínculo com ela e um horário inicial de seg a sex. Tudo editável em
+ * Gestão. Uma falha aqui não desfaz a clínica — só deixa a lista para preencher à mão.
+ */
+async function applySuggestions(orgId: string, segment: string, services: string[]) {
+  const supabase = await createSupabaseServerClient();
+  const { data: created, error } = await supabase
+    .from("services")
+    .insert(
+      [...new Set(services)].map((name) => {
+        const s = suggestionFor(segment, name);
+        return { organization_id: orgId, name, category: s.category, duration_min: s.durationMin };
+      }),
+    )
+    .select("id");
+  if (error) return console.error("[onboarding] serviços sugeridos", error.code, error.message);
+
+  const { data: pro } = await supabase.from("professionals").select("id").eq("organization_id", orgId).maybeSingle();
+  if (!pro) return;
+  const links = await supabase
+    .from("professional_services")
+    .insert((created ?? []).map((s) => ({ organization_id: orgId, professional_id: pro.id, service_id: s.id })));
+  if (links.error) console.error("[onboarding] vínculos", links.error.code, links.error.message);
+  const hours = await supabase.rpc("set_weekly_availability", {
+    p_professional: pro.id,
+    p_rules: [1, 2, 3, 4, 5].flatMap((weekday) => [
+      { weekday, start: "08:00", end: "12:00" },
+      { weekday, start: "13:00", end: "18:00" },
+    ]),
+  });
+  if (hours.error) console.error("[onboarding] horário inicial", hours.error.code, hours.error.message);
+}
 
 export interface OnboardingResult {
   message?: string;
@@ -36,11 +71,10 @@ export async function createClinic(input: unknown): Promise<OnboardingResult> {
   const v = parsed.data;
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("create_organization", {
+  const { data: orgId, error } = await supabase.rpc("create_organization", {
     p_name: v.name,
     p_slug: v.slug,
     p_segment: v.segment,
-    // Serviços sugeridos ficam guardados aqui até a Fase 4 (cadastro de serviços).
     p_onboarding: { size: v.size, services: v.services, need: v.need },
     p_attends: v.attends,
     p_specialty: v.attends ? v.specialty || undefined : undefined,
@@ -53,6 +87,8 @@ export async function createClinic(input: unknown): Promise<OnboardingResult> {
     console.error("[onboarding] create_organization", error.code, error.message);
     return { message: "Não foi possível criar a clínica agora. Tente de novo em instantes." };
   }
+
+  await applySuggestions(orgId, v.segment, v.services);
 
   (await cookies()).set(LAST_CLINIC_COOKIE, v.slug, { path: "/", sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
   redirect(`/c/${v.slug}/inicio`);

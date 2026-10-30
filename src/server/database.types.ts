@@ -175,6 +175,104 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"appointment_events": {
+                  Row: {
+                    "actor_user_id": string | null,"appointment_id": string,"created_at": string,"from_status": Database["public"]['Enums']["appointment_status"] | null,"id": number,"organization_id": string,"reason": string | null,"to_status": Database["public"]['Enums']["appointment_status"]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_user_id"?: string | null,"appointment_id": string,"created_at"?: string,"from_status"?: Database["public"]['Enums']["appointment_status"] | null,"id"?: never,"organization_id": string,"reason"?: string | null,"to_status": Database["public"]['Enums']["appointment_status"]
+                  }
+                  Update: {
+                    "actor_user_id"?: string | null,"appointment_id"?: string,"created_at"?: string,"from_status"?: Database["public"]['Enums']["appointment_status"] | null,"id"?: never,"organization_id"?: string,"reason"?: string | null,"to_status"?: Database["public"]['Enums']["appointment_status"]
+                  }
+                  Relationships: [
+
+                  ]
+                },"appointments": {
+                  Row: {
+                    "admin_notes": string | null,"created_at": string,"created_by": string | null,"ends_at": string,"hold_expires_at": string | null,"id": string,"organization_id": string,"origin": Database["public"]['Enums']["appointment_origin"],"patient_id": string | null,"professional_id": string,"service_id": string,"starts_at": string,"status": Database["public"]['Enums']["appointment_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "admin_notes"?: string | null,"created_at"?: string,"created_by"?: string | null,"ends_at": string,"hold_expires_at"?: string | null,"id"?: string,"organization_id": string,"origin"?: Database["public"]['Enums']["appointment_origin"],"patient_id"?: string | null,"professional_id": string,"service_id": string,"starts_at": string,"status": Database["public"]['Enums']["appointment_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "admin_notes"?: string | null,"created_at"?: string,"created_by"?: string | null,"ends_at"?: string,"hold_expires_at"?: string | null,"id"?: string,"organization_id"?: string,"origin"?: Database["public"]['Enums']["appointment_origin"],"patient_id"?: string | null,"professional_id"?: string,"service_id"?: string,"starts_at"?: string,"status"?: Database["public"]['Enums']["appointment_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+
+                  ]
+                },"availability_rules": {
+                  Row: {
+                    "created_at": string,"end_time": string,"id": string,"organization_id": string,"professional_id": string,"start_time": string,"weekday": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"end_time": string,"id"?: string,"organization_id": string,"professional_id": string,"start_time": string,"weekday": number
+                  }
+                  Update: {
+                    "created_at"?: string,"end_time"?: string,"id"?: string,"organization_id"?: string,"professional_id"?: string,"start_time"?: string,"weekday"?: number
+                  }
+                  Relationships: [
+
+                  ]
+                },"patients": {
+                  Row: {
+                    "admin_notes": string | null,"birth_date": string | null,"created_at": string,"created_by": string | null,"deleted_at": string | null,"email": string | null,"full_name": string,"id": string,"organization_id": string,"phone_e164": string | null,"source": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "admin_notes"?: string | null,"birth_date"?: string | null,"created_at"?: string,"created_by"?: string | null,"deleted_at"?: string | null,"email"?: string | null,"full_name": string,"id"?: string,"organization_id": string,"phone_e164"?: string | null,"source"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "admin_notes"?: string | null,"birth_date"?: string | null,"created_at"?: string,"created_by"?: string | null,"deleted_at"?: string | null,"email"?: string | null,"full_name"?: string,"id"?: string,"organization_id"?: string,"phone_e164"?: string | null,"source"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+
+                  ]
+                },"professional_services": {
+                  Row: {
+                    "organization_id": string,"professional_id": string,"service_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "organization_id": string,"professional_id": string,"service_id": string
+                  }
+                  Update: {
+                    "organization_id"?: string,"professional_id"?: string,"service_id"?: string
+                  }
+                  Relationships: [
+
+                  ]
+                },"schedule_blocks": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"ends_at": string,"id": string,"kind": Database["public"]['Enums']["block_kind"],"organization_id": string,"professional_id": string | null,"reason": string | null,"starts_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"ends_at": string,"id"?: string,"kind": Database["public"]['Enums']["block_kind"],"organization_id": string,"professional_id"?: string | null,"reason"?: string | null,"starts_at": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"ends_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["block_kind"],"organization_id"?: string,"professional_id"?: string | null,"reason"?: string | null,"starts_at"?: string
+                  }
+                  Relationships: [
+
+                  ]
+                },"services": {
+                  Row: {
+                    "active": boolean,"buffer_after_min": number,"category": string | null,"created_at": string,"duration_min": number,"id": string,"is_public": boolean,"name": string,"organization_id": string,"price_cents": number | null,"show_price_publicly": boolean,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"buffer_after_min"?: number,"category"?: string | null,"created_at"?: string,"duration_min": number,"id"?: string,"is_public"?: boolean,"name": string,"organization_id": string,"price_cents"?: number | null,"show_price_publicly"?: boolean,"updated_at"?: string
+                  }
+                  Update: {
+                    "active"?: boolean,"buffer_after_min"?: number,"category"?: string | null,"created_at"?: string,"duration_min"?: number,"id"?: string,"is_public"?: boolean,"name"?: string,"organization_id"?: string,"price_cents"?: number | null,"show_price_publicly"?: boolean,"updated_at"?: string
+                  }
+                  Relationships: [
+
+                  ]
                 }
           }
           Views: {
@@ -217,10 +315,30 @@ isOneToOne: false
                            },
 "slug_available":
 { Args: { "p_slug": string }; Returns: boolean
+                           },
+"create_appointment":
+{ Args: { "p_notes"?: string,"p_org": string,"p_patient": string,"p_professional": string,"p_service": string,"p_starts_at": string }; Returns: string
+                           },
+"delete_patient":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"reschedule_appointment":
+{ Args: { "p_id": string,"p_professional"?: string,"p_starts_at": string }; Returns: undefined
+                           },
+"schedule_busy":
+{ Args: { "p_from": string,"p_org": string,"p_to": string }; Returns: {
+              "ends_at": string,"id": string,"professional_id": string,"starts_at": string,"status": Database["public"]['Enums']["appointment_status"]
+            }[]
+                           },
+"set_appointment_status":
+{ Args: { "p_id": string,"p_reason"?: string,"p_to": Database["public"]['Enums']["appointment_status"] }; Returns: undefined
+                           },
+"set_weekly_availability":
+{ Args: { "p_professional": string,"p_rules": Json }; Returns: undefined
                            }
           }
           Enums: {
-            "member_role": "manager"|"reception"|"professional","member_status": "invited"|"active"|"disabled","org_segment": "medical_clinic"|"medical_office"|"dental_clinic"|"dental_office"|"aesthetic_clinic"|"aesthetic_office"|"multidisciplinary"|"other","org_status": "trial"|"active"|"suspended"|"cancelled"
+            "appointment_origin": "staff"|"public"|"import"|"integration","appointment_status": "requested"|"confirmed"|"declined"|"expired"|"cancelled"|"no_show"|"completed","block_kind": "break"|"time_off"|"vacation"|"holiday"|"other","member_role": "manager"|"reception"|"professional","member_status": "invited"|"active"|"disabled","org_segment": "medical_clinic"|"medical_office"|"dental_clinic"|"dental_office"|"aesthetic_clinic"|"aesthetic_office"|"multidisciplinary"|"other","org_status": "trial"|"active"|"suspended"|"cancelled"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -336,7 +454,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "member_role": ["manager", "reception", "professional"],"member_status": ["invited", "active", "disabled"],"org_segment": ["medical_clinic", "medical_office", "dental_clinic", "dental_office", "aesthetic_clinic", "aesthetic_office", "multidisciplinary", "other"],"org_status": ["trial", "active", "suspended", "cancelled"]
+            "appointment_origin": ["staff", "public", "import", "integration"],"appointment_status": ["requested", "confirmed", "declined", "expired", "cancelled", "no_show", "completed"],"block_kind": ["break", "time_off", "vacation", "holiday", "other"],"member_role": ["manager", "reception", "professional"],"member_status": ["invited", "active", "disabled"],"org_segment": ["medical_clinic", "medical_office", "dental_clinic", "dental_office", "aesthetic_clinic", "aesthetic_office", "multidisciplinary", "other"],"org_status": ["trial", "active", "suspended", "cancelled"]
           }
         }
 } as const

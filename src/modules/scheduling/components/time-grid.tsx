@@ -4,7 +4,7 @@ import { addMinutes, differenceInMinutes, isSameDay, startOfDay } from "date-fns
 import { Check, Clock, UserX } from "lucide-react";
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { hasConflict, overlaps, workWindows } from "@/modules/availability/rules";
-import { select } from "@/prototype/store";
+import { select } from "@/modules/clinic/client";
 import type { Appointment, Db } from "@/prototype/types";
 import { fmt, time } from "@/lib/format";
 import { cn } from "@/lib/cn";

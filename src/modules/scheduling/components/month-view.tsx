@@ -1,7 +1,7 @@
 "use client";
 
 import { addDays, endOfMonth, endOfWeek, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
-import { select } from "@/prototype/store";
+import { select } from "@/modules/clinic/client";
 import type { Appointment, Db } from "@/prototype/types";
 import { fmt, time } from "@/lib/format";
 import { cn } from "@/lib/cn";

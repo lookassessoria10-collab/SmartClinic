@@ -3,7 +3,7 @@
 import { addDays, isSameDay, startOfDay } from "date-fns";
 import { CalendarDays, Clock } from "lucide-react";
 import { freeSlots } from "@/modules/availability/rules";
-import { select } from "@/prototype/store";
+import { select } from "@/modules/clinic/client";
 import type { Appointment, Db } from "@/prototype/types";
 import { StatusBadge } from "@/ui/status-badge";
 import { EmptyState } from "@/ui/primitives";

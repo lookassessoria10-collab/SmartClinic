@@ -1,4 +1,5 @@
-// Tipos do protótipo. Espelham docs/03-modelo-de-dados.md de forma simplificada.
+// Tipos dos dados da clínica usados pelas telas. Espelham docs/03-modelo-de-dados.md de forma
+// simplificada; desde a Fase 4 são preenchidos pelo banco (src/modules/clinic/server.ts).
 
 export type AppointmentStatus =
   | "requested"
@@ -47,6 +48,11 @@ export interface Professional {
   specialty: string;
   color: number; // 1..8 → --agenda-N
   acceptsPublic: boolean;
+  active: boolean;
+  /** Conta da equipe ligada a este profissional (null = não usa o sistema). */
+  userId: string | null;
+  councilType?: string;
+  councilNumber?: string;
 }
 
 export interface Service {
@@ -58,13 +64,14 @@ export interface Service {
   priceCents: number | null;
   isPublic: boolean;
   showPrice: boolean;
+  active: boolean;
   professionalIds: string[];
 }
 
 export interface Patient {
   id: string;
   name: string;
-  phone: string; // E.164
+  phone: string; // E.164 ou "" (sem telefone)
   email?: string;
   birthDate?: string;
   notes?: string;
@@ -98,6 +105,8 @@ export interface Appointment {
   holdExpiresAt?: string;
   notes?: string;
   createdAt: string;
+  /** Só a ocupação é conhecida (agenda de outro profissional, ADR-015): sem serviço nem paciente. */
+  hidden?: boolean;
 }
 
 export interface BookingRequest {

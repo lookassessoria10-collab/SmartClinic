@@ -31,6 +31,10 @@ Status: **Proposta** até a aprovação da Fase 1; depois **Aceita**. Mudanças 
 | 023 | Funções usadas em `CHECK` precisam de EXECUTE para `authenticated` (migração 0009) | O Postgres avalia `CHECK` com as permissões de quem altera a linha; sem o GRANT, todo UPDATE direto falhava. Lição: para cada regra de "não pode", ter também um teste de "pode" | — |
 | 024 | MFA aplicado no banco: `app.mfa_ok()` dentro de `is_member`/`has_perm`/`shares_org_with` e nas políticas de "própria linha"; admin da plataforma só com `aal2` (migração 0010) | Uma senha vazada não basta nem chamando a API direto; uma única mudança cobre todas as políticas e funções de escrita existentes e futuras | Checar MFA só na tela/proxy (contornável pela API) |
 | 025 | Páginas do servidor na área da clínica começam com `await connection()` | O Next 16 pré-renderiza cada página à parte; o cliente Supabase consulta o relógio e quebrava a página ("Date.now() while prerendering") | Confiar só no `connection()` do layout (não cobre as páginas) |
+| 026 | Chaves compostas `(id, organization_id)` nas tabelas da agenda: filhas referenciam o par | O banco impede ligar profissional, serviço e paciente de clínicas diferentes, mesmo por escrita direta | Conferir só nas funções |
+| 027 | Auditoria de pacientes e agendamentos guarda só os **nomes** dos campos alterados (`app.audit_row_fields_only`) | A trilha (retida por 5 anos) não pode virar cópia de dados pessoais de saúde que sobreviveria à exclusão do paciente | Valores antes/depois, como nas tabelas de configuração |
+| 028 | Agendamento só por funções do banco (`create_appointment`, `reschedule_appointment`, `set_appointment_status`), que conferem horário de atendimento no fuso da clínica, bloqueios e transições; o conflito é garantido pela exclusão GiST | Uma regra, um lugar; duas pessoas clicando no mesmo horário → só uma consegue | Validar só no servidor Next (corrida entre requisições) |
+| 029 | Telas da clínica recebem os dados num único objeto carregado no layout (`loadClinicDb`) e revalidado após cada ação | Reaproveita os componentes de agenda do protótipo sem reescrever; a RLS filtra o que entra | Uma consulta por tela (refazer todos os componentes) — revisitar se o volume crescer |
 
 ## Parte B — Decisões que exigem sua aprovação
 
@@ -64,6 +68,14 @@ Marque cada uma com ✅ (aprovado como proposto), ✏️ (aprovado com ajuste) o
 | **D-19** | MFA | Opcional para gestores, obrigatório para admin da plataforma | Passo 8 |
 | **D-20** | Métodos de login | Só e-mail + senha no MVP (sem Google/link mágico) | Passo 5 |
 | **D-21** | Política de senha | Mínimo de 10 caracteres, sem regras de composição, bloqueio de senhas vazadas se disponível no plano | Passo 5 |
+
+### Decisões da versão para testadores (2026-10-29, ver [16](16-versao-de-teste.md))
+
+| # | Tema | Decisão | Status |
+|---|------|---------|--------|
+| **D-22** | Escopo antes do primeiro teste externo | Etapas A (cadastros) + B (agenda) reais; agendamento online e financeiro em seguida | ✅ Aprovada |
+| **D-23** | Testadores | Pessoas convidadas, **somente dados fictícios**; staging gratuito, uso não comercial | ✅ Aprovada |
+| **D-24** | E-mail dos testadores | SMTP próprio gratuito (Resend) com domínio do cliente; configurado por ele no painel | ✅ Aprovada |
 
 ### Perguntas abertas (não bloqueiam a Fase 2)
 1. Haverá período de teste gratuito? Quantos dias?

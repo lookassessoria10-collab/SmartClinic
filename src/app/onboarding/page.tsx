@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition, type ReactNode } from "reac
 import {
   ArrowLeft, Building2, CalendarCheck, Check, CircleAlert, Globe, HeartPulse, Layers, Loader2, Plus, Sparkles, Stethoscope, Upload, Wallet, type LucideIcon,
 } from "lucide-react";
-import { SEGMENT_SUGGESTIONS, segmentFamily } from "@/prototype/fixtures";
+import { SEGMENT_SUGGESTIONS, segmentFamily } from "@/modules/organizations/suggestions";
 import { checkSlug, createClinic } from "@/modules/organizations/actions";
 import { slugify } from "@/modules/organizations/schemas";
 import type { Need, Segment } from "@/prototype/types";

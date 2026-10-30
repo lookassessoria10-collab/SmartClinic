@@ -16,10 +16,10 @@ test("telas públicas sem violações", async ({ page }) => {
   }
 });
 
-test("telas de Gestão e Minha conta sem violações", async ({ page }) => {
+test("telas da clínica, Gestão e Minha conta sem violações", async ({ page }) => {
   await login(page, SEED.ana, SEED.password);
   await expect(page).toHaveURL(/\/c\/clinica-aurora\/inicio/);
-  for (const path of ["gestao/equipe", "gestao/clinica", "gestao/auditoria", "conta"]) {
+  for (const path of ["inicio", "agenda", "pacientes", "gestao/profissionais", "gestao/servicos", "gestao/horarios", "gestao/equipe", "gestao/clinica", "gestao/auditoria", "conta"]) {
     await page.goto(`/c/clinica-aurora/${path}`);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     expect(await axe(page), path).toEqual([]);

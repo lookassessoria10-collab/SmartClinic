@@ -4,17 +4,17 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { addDays, addMonths, addWeeks, isSameDay, startOfDay, startOfWeek } from "date-fns";
-import { ChevronLeft, ChevronRight, Inbox, Plus } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Inbox, Plus } from "lucide-react";
 import { freeSlots } from "@/modules/availability/rules";
 import { TimeGrid, type GridColumn } from "@/modules/scheduling/components/time-grid";
 import { MonthView } from "@/modules/scheduling/components/month-view";
 import { DayList } from "@/modules/scheduling/components/day-list";
 import { AppointmentSheet, type SheetState } from "@/modules/scheduling/components/appointment-sheet";
-import { select, useDb } from "@/prototype/store";
+import { select, useDb } from "@/modules/clinic/client";
 import type { Db } from "@/prototype/types";
 import { Button } from "@/ui/button";
 import { Select } from "@/ui/field";
-import { Segmented } from "@/ui/primitives";
+import { Card, EmptyState, Segmented } from "@/ui/primitives";
 import { useMedia } from "@/lib/use-media";
 import { cap, fmt } from "@/lib/format";
 
@@ -30,7 +30,26 @@ export default function AgendaPage() {
 
 function Agenda() {
   const db = useDb();
-  if (!db) return null;
+  const { org } = useParams<{ org: string }>();
+  if (select.activeProfessionals(db).length === 0) {
+    return (
+      <>
+        <h1 className="mb-4 text-title-1 font-semibold">Agenda</h1>
+        <Card>
+          <EmptyState
+            icon={CalendarDays}
+            title="Nenhum profissional cadastrado"
+            description="A agenda é organizada por profissional. Cadastre quem atende, os serviços e os horários de atendimento."
+            action={
+              <Link href={`/c/${org}/gestao/profissionais`} className="inline-flex h-11 items-center rounded-sm bg-accent px-4 text-body-sm font-medium text-on-accent hover:bg-accent-hover">
+                Cadastrar profissional
+              </Link>
+            }
+          />
+        </Card>
+      </>
+    );
+  }
   return <AgendaInner db={db} />;
 }
 
@@ -40,9 +59,10 @@ function AgendaInner({ db }: { db: Db }) {
   const params = useSearchParams();
   const mobile = useMedia("(max-width: 767px)");
   const ownId = db.viewer.role === "professional" ? db.viewer.professionalId : null;
+  const active = useMemo(() => select.activeProfessionals(db), [db]);
 
   // ?novo=1 → abre o painel no próximo horário livre (ação rápida do Início).
-  const [initialNew] = useState(() => (params.get("novo") === "1" ? nextFree(db, ownId ?? db.professionals[0].id) : null));
+  const [initialNew] = useState(() => (params.get("novo") === "1" && (ownId ?? active[0]?.id) ? nextFree(db, (ownId ?? active[0]?.id)!) : null));
   const [view, setView] = useState<View>("week");
   const [anchor, setAnchor] = useState(() => startOfDay(initialNew?.start ?? new Date()));
   // O filtro vale para o perfil que o escolheu; ao trocar de perfil, o profissional abre na própria agenda.
@@ -57,7 +77,7 @@ function AgendaInner({ db }: { db: Db }) {
     if (params.get("novo") === "1") router.replace(`/c/${org}/agenda`);
   }, [params, org, router]);
 
-  const profIds = useMemo(() => (profFilter === "all" ? db.professionals.map((p) => p.id) : [profFilter]), [profFilter, db.professionals]);
+  const profIds = useMemo(() => (profFilter === "all" ? active.map((p) => p.id) : [profFilter]), [profFilter, active]);
 
   const appointments = useMemo(
     () =>
@@ -110,7 +130,7 @@ function AgendaInner({ db }: { db: Db }) {
             </Link>
           )}
         </div>
-        <Button className="hidden md:inline-flex" onClick={() => setSheet({ mode: "create", professionalId: profIds[0], start: nextRoundedSlot(anchor) })}>
+        <Button className="hidden md:inline-flex" onClick={() => setSheet({ mode: "create", professionalId: ownId ?? profIds[0], start: nextRoundedSlot(anchor) })}>
           <Plus className="size-4" aria-hidden /> Novo agendamento
         </Button>
       </div>
@@ -149,7 +169,7 @@ function AgendaInner({ db }: { db: Db }) {
         <label className="sr-only" htmlFor="f-prof">Profissional</label>
         <Select id="f-prof" value={profFilter} onChange={(e) => setProfFilter(e.target.value)} className="h-10 w-auto min-w-48 text-body-sm">
           <option value="all">Todos os profissionais</option>
-          {db.professionals.map((p) => (
+          {active.map((p) => (
             <option key={p.id} value={p.id}>
               {p.id === ownId ? `${p.name} (eu)` : p.name}
             </option>
@@ -158,7 +178,7 @@ function AgendaInner({ db }: { db: Db }) {
         <label className="sr-only" htmlFor="f-svc">Serviço</label>
         <Select id="f-svc" value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value)} className="h-10 w-auto min-w-44 text-body-sm">
           <option value="all">Todos os serviços</option>
-          {db.services.map((s) => (
+          {db.services.filter((s) => s.active).map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
@@ -183,7 +203,7 @@ function AgendaInner({ db }: { db: Db }) {
       <Button
         size="lg"
         className="fixed right-4 bottom-24 z-20 rounded-full shadow-lg md:hidden"
-        onClick={() => setSheet({ mode: "create", professionalId: profIds[0], start: nextRoundedSlot(anchor) })}
+        onClick={() => setSheet({ mode: "create", professionalId: ownId ?? profIds[0], start: nextRoundedSlot(anchor) })}
       >
         <Plus className="size-5" aria-hidden /> Agendar
       </Button>

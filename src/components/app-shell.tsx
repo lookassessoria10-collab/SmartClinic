@@ -4,15 +4,14 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { signOut } from "@/modules/auth/actions";
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { CalendarDays, Check, ChevronsUpDown, FlaskConical, Home, LogOut, Plus, RotateCcw, Settings2, ShieldCheck, Users, Wallet, type LucideIcon } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
-import { actions, select, useDb } from "@/prototype/store";
+import { CalendarDays, Check, ChevronsUpDown, Home, LogOut, Plus, Settings2, ShieldCheck, Users, Wallet, type LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
+import { select, useDb } from "@/modules/clinic/client";
 import { canAccess, ROLE_LABEL, type Section } from "@/prototype/access";
 import type { Role } from "@/prototype/types";
 import { useSession, type ClinicSession } from "./session-context";
 import { Avatar, EmptyState, Skeleton } from "@/ui/primitives";
 import { Button } from "@/ui/button";
-import { useToast } from "@/ui/toast";
 import { cn } from "@/lib/cn";
 
 const NAV: { section: Section; label: string; icon: LucideIcon }[] = [
@@ -33,14 +32,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const role = session.role;
 
-  // As telas de agenda/pacientes ainda usam dados de demonstração (D-18): alinha o "visualizador"
-  // desses dados ao papel REAL, para a interface não mostrar mais do que o papel permite.
-  useEffect(() => {
-    if (db && db.viewer.role !== role) actions.setViewer(role);
-  }, [db, role]);
-
-  if (!db) return <ShellSkeleton />;
-
   const items = NAV.filter((n) => canAccess(role, n.section));
   const pending = select.pendingRequests(db).length;
 
@@ -49,10 +40,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <a href="#conteudo" className="sr-only z-[70] rounded-sm bg-surface px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         Pular para o conteúdo
       </a>
-      <DemoDataBar />
-
       {/* Barra lateral (desktop/tablet) */}
-      <aside className="glass fixed top-10 bottom-3 left-3 z-20 hidden w-[76px] flex-col rounded-lg border p-2 md:flex lg:w-[240px] lg:p-3">
+      <aside className="glass fixed top-3 bottom-3 left-3 z-20 hidden w-[76px] flex-col rounded-lg border p-2 md:flex lg:w-[240px] lg:p-3">
         <OrgSwitcher session={session} />
         <nav aria-label="Principal" className="mt-4 flex flex-col gap-1">
           {items.map((n) => {
@@ -85,12 +74,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Cabeçalho (celular) */}
-      <header className="glass sticky top-8 z-20 mx-2 mt-2 flex h-14 items-center justify-between rounded-lg border px-3 md:hidden">
+      <header className="glass sticky top-2 z-20 mx-2 mt-2 flex h-14 items-center justify-between rounded-lg border px-3 md:hidden">
         <OrgSwitcher session={session} compact />
         <UserMenu name={session.user.name} email={session.user.email} role={role} accountHref={`${base}/conta`} compact />
       </header>
 
-      <main id="conteudo" className="px-4 pt-6 pb-28 md:pt-14 md:pr-6 md:pb-10 md:pl-[100px] lg:pl-[272px]">
+      <main id="conteudo" className="px-4 pt-6 pb-28 md:pt-8 md:pr-6 md:pb-10 md:pl-[100px] lg:pl-[272px]">
         <div className="mx-auto max-w-[1400px]">{canAccess(role, current) ? children : <NoAccess />}</div>
       </main>
 
@@ -120,30 +109,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           );
         })}
       </nav>
-    </div>
-  );
-}
-
-/** Avisa que agenda e pacientes ainda usam dados de demonstração (D-18) e permite restaurá-los. */
-function DemoDataBar() {
-  const toast = useToast();
-  return (
-    <div className="sticky top-0 z-30 flex h-8 items-center justify-center gap-2 bg-ink px-3 text-caption text-white md:fixed md:inset-x-0">
-      <FlaskConical className="size-3.5 shrink-0" aria-hidden />
-      <span>
-        <span className="hidden sm:inline">Login e clínica reais · </span>agenda e pacientes com dados de demonstração
-      </span>
-      <button
-        onClick={() => {
-          actions.reset();
-          toast({ message: "Dados de demonstração restaurados.", tone: "info" });
-        }}
-        className="ml-1 inline-flex h-6 items-center gap-1 rounded-xs px-1.5 hover:bg-white/15"
-      >
-        <RotateCcw className="size-3.5" aria-hidden />
-        <span className="hidden sm:inline">Restaurar</span>
-        <span className="sr-only sm:hidden">Restaurar dados de demonstração</span>
-      </button>
     </div>
   );
 }
@@ -270,7 +235,7 @@ function NoAccess() {
 
 export function ShellSkeleton() {
   return (
-    <div className="p-4 md:pt-14 md:pl-[100px] lg:pl-[272px]" aria-busy="true" aria-label="Carregando">
+    <div className="p-4 md:pt-8 md:pl-[100px] lg:pl-[272px]" aria-busy="true" aria-label="Carregando">
       <Skeleton className="h-8 w-48" />
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <Skeleton className="h-40" />

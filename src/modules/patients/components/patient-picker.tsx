@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, useTransition } from "react";
+import { useParams } from "next/navigation";
 import { Search, UserPlus, X } from "lucide-react";
-import { actions } from "@/prototype/store";
+import { savePatient } from "@/modules/patients/actions";
 import type { Db, Patient } from "@/prototype/types";
 import { Avatar } from "@/ui/primitives";
 import { Button } from "@/ui/button";
@@ -19,6 +20,8 @@ export function PatientPicker({ db, value, onChange, autoFocus }: { db: Db; valu
   const [creating, setCreating] = useState(false);
   const [newPhone, setNewPhone] = useState("");
   const [phoneError, setPhoneError] = useState<string>();
+  const [saving, start] = useTransition();
+  const { org } = useParams<{ org: string }>();
   const listId = useId();
 
   const results = useMemo(() => {
@@ -36,9 +39,9 @@ export function PatientPicker({ db, value, onChange, autoFocus }: { db: Db; valu
         <Avatar name={value.name} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-body-sm font-medium">{value.name}</p>
-          <p className="tabular text-caption text-ink-2">{phone(value.phone)}</p>
+          <p className="tabular text-caption text-ink-2">{value.phone ? phone(value.phone) : "Sem telefone"}</p>
         </div>
-        <button onClick={() => onChange(null)} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-muted" aria-label="Trocar paciente">
+        <button type="button" onClick={() => onChange(null)} className="grid size-8 place-items-center rounded-full text-ink-2 hover:bg-muted" aria-label="Trocar paciente">
           <X className="size-4" aria-hidden />
         </button>
       </div>
@@ -56,17 +59,23 @@ export function PatientPicker({ db, value, onChange, autoFocus }: { db: Db; valu
           <Input inputMode="tel" autoComplete="off" value={newPhone} onChange={(e) => setNewPhone(maskPhone(e.target.value))} placeholder="(11) 90000-0000" />
         </Field>
         <div className="flex justify-end gap-2">
-          <Button size="sm" variant="ghost" onClick={() => setCreating(false)}>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setCreating(false)}>
             Cancelar
           </Button>
           <Button
+            type="button"
             size="sm"
+            loading={saving}
             onClick={() => {
               const e164 = toE164(newPhone);
               if (!e164) return setPhoneError("Informe um celular com DDD.");
               const dup = db.patients.find((p) => p.phone === e164);
-              if (dup) return setPhoneError(`Este telefone já é de ${dup.name}.`);
-              onChange(actions.createPatient({ name: query.trim(), phone: e164 }));
+              if (dup) return setPhoneError(`Este telefone já está no cadastro de ${dup.name}. Busque pelo nome.`);
+              start(async () => {
+                const r = await savePatient(org, null, { name: query, phone: newPhone });
+                if (r.ok && r.data) onChange(r.data);
+                else setPhoneError(r.fields?.phone ?? r.fields?.name ?? r.message);
+              });
             }}
             disabled={query.trim().length < 3}
           >

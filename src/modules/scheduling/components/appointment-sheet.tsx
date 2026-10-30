@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { format, startOfDay } from "date-fns";
 import { AlertTriangle, CalendarClock, History, Phone, StickyNote } from "lucide-react";
 import { freeSlots } from "@/modules/availability/rules";
 import { PatientPicker } from "@/modules/patients/components/patient-picker";
-import { actions, select } from "@/prototype/store";
+import { select } from "@/modules/clinic/client";
+import { createAppointment, rescheduleAppointment, setAppointmentStatus } from "@/modules/scheduling/actions";
 import type { Db, Patient } from "@/prototype/types";
 import { Sheet } from "@/ui/sheet";
 import { Button } from "@/ui/button";
@@ -42,7 +43,7 @@ export function AppointmentSheet({ db, state, onClose, onCreated }: { db: Db; st
 function useSlots(db: Db, professionalId: string, serviceId: string, day: Date, ignoreId?: string) {
   return useMemo(() => {
     const svc = select.service(db, serviceId);
-    if (!svc) return [];
+    if (!svc.id) return [];
     return freeSlots({
       day, professionalId, durationMin: svc.durationMin, bufferAfterMin: svc.bufferAfterMin,
       stepMin: 15, rules: db.availability, blocks: db.blocks, appointments: db.appointments, notBefore: new Date(), ignoreAppointmentId: ignoreId,
@@ -50,11 +51,28 @@ function useSlots(db: Db, professionalId: string, serviceId: string, day: Date, 
   }, [db, professionalId, serviceId, day, ignoreId]);
 }
 
+/** Até 3 horários livres a partir de `around`, nos próximos 7 dias (sugestão após conflito). */
+function suggestions(db: Db, professionalId: string, serviceId: string, around: Date) {
+  const svc = select.service(db, serviceId);
+  const out: Date[] = [];
+  for (let d = 0; d < 7 && out.length < 3; d++) {
+    const day = startOfDay(new Date(+startOfDay(around) + d * 86_400_000));
+    const slots = freeSlots({
+      day, professionalId, durationMin: svc.durationMin, bufferAfterMin: svc.bufferAfterMin,
+      stepMin: 15, rules: db.availability, blocks: db.blocks, appointments: db.appointments, notBefore: new Date(),
+    });
+    out.push(...slots.filter((s) => d > 0 || s > around).slice(0, 3 - out.length));
+  }
+  return out;
+}
+
 function CreateForm({ db, initial, onDone }: { db: Db; initial: { professionalId: string; start: Date }; onDone: (id: string) => void }) {
+  const { org } = useParams<{ org: string }>();
   const toast = useToast();
+  const [saving, startSaving] = useTransition();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [professionalId, setProfessionalId] = useState(initial.professionalId);
-  const servicesFor = db.services.filter((s) => s.professionalIds.includes(professionalId));
+  const servicesFor = db.services.filter((s) => s.active && s.professionalIds.includes(professionalId));
   const [serviceId, setServiceId] = useState(servicesFor[0]?.id ?? "");
   const [day, setDay] = useState(startOfDay(initial.start));
   const [start, setStart] = useState<number>(+initial.start);
@@ -68,15 +86,22 @@ function CreateForm({ db, initial, onDone }: { db: Db; initial: { professionalId
 
   function save() {
     setTouched(true);
-    if (!patient || !svc || !startValid) return;
-    const res = actions.book({ professionalId, serviceId, patientId: patient.id, startsAt: new Date(start), notes: notes || undefined });
-    if (!res.ok) return setError({ message: res.error, suggestions: res.suggestions });
-    toast({
-      message: `Agendado: ${patient.name}, ${dayLabel(new Date(start)).toLowerCase()} às ${time(new Date(start))}.`,
-      tone: "success",
-      action: { label: "Desfazer", onClick: () => actions.setStatus(res.id, "cancelled", "Desfeito logo após criar") },
+    if (!patient || !svc.id || !startValid) return;
+    startSaving(async () => {
+      const res = await createAppointment(org, {
+        professionalId, serviceId, patientId: patient.id, startsAt: new Date(start).toISOString(), notes: notes || undefined,
+      });
+      if (!res.ok || !res.data) {
+        return setError({ message: res.message ?? "Não foi possível agendar.", suggestions: suggestions(db, professionalId, serviceId, new Date(start)) });
+      }
+      const id = res.data.id;
+      toast({
+        message: `Agendado: ${patient.name}, ${dayLabel(new Date(start)).toLowerCase()} às ${time(new Date(start))}.`,
+        tone: "success",
+        action: { label: "Desfazer", onClick: () => void setAppointmentStatus(org, id, "cancelled", "Desfeito logo após criar") },
+      });
+      onDone(id);
     });
-    onDone(res.id);
   }
 
   return (
@@ -98,19 +123,27 @@ function CreateForm({ db, initial, onDone }: { db: Db; initial: { professionalId
           onChange={(e) => {
             const pid = e.target.value;
             setProfessionalId(pid);
-            const first = db.services.find((s) => s.professionalIds.includes(pid));
+            const first = db.services.find((s) => s.active && s.professionalIds.includes(pid));
             setServiceId(first?.id ?? "");
           }}
         >
-          {db.professionals.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
+          {/* Profissional agenda só na própria agenda; equipe, em qualquer uma (a função do banco confere). */}
+          {select
+            .activeProfessionals(db)
+            .filter((p) => db.viewer.role !== "professional" || p.id === db.viewer.professionalId)
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
         </Select>
       </Field>
 
-      <Field label="Serviço" hint={svc ? `${svc.durationMin} min${svc.bufferAfterMin ? ` + ${svc.bufferAfterMin} min de intervalo` : ""}` : undefined}>
+      <Field
+        label="Serviço"
+        error={touched && !svc.id ? "Este profissional ainda não tem serviços. Cadastre em Gestão → Serviços." : undefined}
+        hint={svc.id ? `${svc.durationMin} min${svc.bufferAfterMin ? ` + ${svc.bufferAfterMin} min de intervalo` : ""}` : undefined}
+      >
         <Select value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
           {servicesFor.map((s) => (
             <option key={s.id} value={s.id}>
@@ -169,7 +202,7 @@ function CreateForm({ db, initial, onDone }: { db: Db; initial: { professionalId
       )}
 
       <div className="sticky bottom-0 -mx-4 -mb-4 flex justify-end gap-2 border-t border-line bg-surface px-4 py-3">
-        <Button type="submit" size="lg" className="w-full sm:w-auto">
+        <Button type="submit" size="lg" className="w-full sm:w-auto" loading={saving}>
           Agendar
         </Button>
       </div>
@@ -188,6 +221,15 @@ function Details({ db, id, onClose }: { db: Db; id: string; onClose: () => void 
   const [rescheduling, setRescheduling] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [reason, setReason] = useState(CANCEL_REASONS[0]);
+  const [busy, start] = useTransition();
+
+  // Concluído / Faltou / Cancelado — o banco confere permissão e transição (0012).
+  const changeStatus = (to: "completed" | "no_show" | "cancelled", ok: string, why?: string) =>
+    start(async () => {
+      const r = await setAppointmentStatus(org, id, to, why);
+      toast({ message: r.ok ? ok : (r.message ?? "Não foi possível alterar."), tone: r.ok ? (to === "completed" ? "success" : "info") : "danger" });
+      if (r.ok && to === "cancelled") onClose();
+    });
 
   if (!a) return <p className="text-body-sm text-ink-2">Agendamento não encontrado.</p>;
   if (!select.canSeeDetails(db, a)) {
@@ -265,10 +307,10 @@ function Details({ db, id, onClose }: { db: Db; id: string; onClose: () => void 
         <div className="flex flex-col gap-2">
           {started && (
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="secondary" onClick={() => { actions.setStatus(a.id, "completed"); toast({ message: "Marcado como concluído.", tone: "success" }); }}>
+              <Button variant="secondary" disabled={busy} onClick={() => changeStatus("completed", "Marcado como concluído.")}>
                 Concluído
               </Button>
-              <Button variant="secondary" onClick={() => { actions.setStatus(a.id, "no_show"); toast({ message: "Falta registrada.", tone: "info" }); }}>
+              <Button variant="secondary" disabled={busy} onClick={() => changeStatus("no_show", "Falta registrada.")}>
                 Faltou
               </Button>
             </div>
@@ -307,12 +349,7 @@ function Details({ db, id, onClose }: { db: Db; id: string; onClose: () => void 
         title="Cancelar agendamento?"
         description={`${select.personName(db, a)} · ${dayLabel(a.startsAt)}, ${time(a.startsAt)}. O horário ficará livre.`}
         confirmLabel="Cancelar agendamento"
-        onConfirm={() => {
-          const prev = { ...a };
-          actions.setStatus(a.id, "cancelled", reason);
-          onClose();
-          toast({ message: "Agendamento cancelado.", tone: "info", action: { label: "Desfazer", onClick: () => actions.restore(prev) } });
-        }}
+        onConfirm={() => changeStatus("cancelled", "Agendamento cancelado. O horário ficou livre.", reason)}
       >
         <fieldset>
           <legend className="mb-2 text-body-sm font-medium">Motivo (opcional)</legend>
@@ -331,7 +368,9 @@ function Details({ db, id, onClose }: { db: Db; id: string; onClose: () => void 
 }
 
 function Reschedule({ db, id, onDone }: { db: Db; id: string; onDone: () => void }) {
+  const { org } = useParams<{ org: string }>();
   const toast = useToast();
+  const [saving, startSaving] = useTransition();
   const a = db.appointments.find((x) => x.id === id)!;
   const [day, setDay] = useState(startOfDay(new Date(a.startsAt)));
   const [start, setStart] = useState<number | null>(null);
@@ -376,13 +415,20 @@ function Reschedule({ db, id, onDone }: { db: Db; id: string; onDone: () => void
         <Button
           size="sm"
           disabled={!start}
-          onClick={() => {
-            const prev = { ...a };
-            const res = actions.reschedule(a.id, new Date(start!));
-            if (!res.ok) return toast({ message: res.error, tone: "danger" });
-            toast({ message: "Agendamento remarcado.", tone: "success", action: { label: "Desfazer", onClick: () => actions.restore(prev) } });
-            onDone();
-          }}
+          loading={saving}
+          onClick={() =>
+            startSaving(async () => {
+              const prevStart = a.startsAt;
+              const res = await rescheduleAppointment(org, a.id, new Date(start!).toISOString());
+              if (!res.ok) return toast({ message: res.message ?? "Não foi possível remarcar.", tone: "danger" });
+              toast({
+                message: "Agendamento remarcado.",
+                tone: "success",
+                action: { label: "Desfazer", onClick: () => void rescheduleAppointment(org, a.id, new Date(prevStart).toISOString()) },
+              });
+              onDone();
+            })
+          }
         >
           Confirmar remarcação
         </Button>

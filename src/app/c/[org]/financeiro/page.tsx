@@ -10,8 +10,8 @@ export default function FinanceiroPage() {
       <Card>
         <EmptyState
           icon={Wallet}
-          title="Chega na Fase 8"
-          description="Este protótipo cobre login, configuração inicial, Início, agenda, página pública e aprovação. O financeiro básico será prototipado na sua fase."
+          title="Em breve"
+          description="O financeiro básico (recebimentos, despesas e pendências) é a próxima etapa depois da agenda. Enquanto isso, o Início mostra uma estimativa pelo preço dos serviços."
         />
       </Card>
     </>

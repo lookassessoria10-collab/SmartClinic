@@ -2,6 +2,8 @@ import { connection } from "next/server";
 import { Suspense, type ReactNode } from "react";
 import { AppShell, ShellSkeleton } from "@/components/app-shell";
 import { SessionProvider, type ClinicSession } from "@/components/session-context";
+import { ClinicDataProvider } from "@/modules/clinic/client";
+import { loadClinicDb } from "@/modules/clinic/server";
 import { getMyMemberships, getMyProfile, requireMember } from "@/server/auth";
 
 // Toda a área da clínica depende de quem está logado: não há casca útil para pré-renderizar
@@ -27,9 +29,12 @@ async function ClinicFrame({ params, children }: { params: Promise<{ org: string
   // 404 para quem não é membro ativo desta clínica (mesma resposta de slug inexistente).
   const ctx = await requireMember(org);
   const [profile, memberships] = await Promise.all([getMyProfile(), getMyMemberships()]);
+  const name = profile?.fullName ?? ctx.user.email ?? "Você";
+  // Profissionais, serviços, pacientes visíveis, horários e agenda — já filtrados pela RLS.
+  const db = await loadClinicDb(ctx, name);
 
   const session: ClinicSession = {
-    user: { id: ctx.user.id, name: profile?.fullName ?? ctx.user.email ?? "Você", email: ctx.user.email },
+    user: { id: ctx.user.id, name, email: ctx.user.email },
     organization: { id: ctx.organization.id, slug: ctx.organization.slug, name: ctx.organization.name, writable: ctx.writable },
     role: ctx.role,
     permissions: [...ctx.permissions],
@@ -38,7 +43,9 @@ async function ClinicFrame({ params, children }: { params: Promise<{ org: string
 
   return (
     <SessionProvider value={session}>
-      <AppShell>{children}</AppShell>
+      <ClinicDataProvider value={db}>
+        <AppShell>{children}</AppShell>
+      </ClinicDataProvider>
     </SessionProvider>
   );
 }

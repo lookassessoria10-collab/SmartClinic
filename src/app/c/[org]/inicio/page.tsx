@@ -3,29 +3,28 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { addDays, endOfDay, isSameDay, startOfDay, startOfMonth, startOfWeek, subDays } from "date-fns";
+import { useTransition } from "react";
 import {
-  ArrowRight, CalendarDays, CalendarPlus, Check, ClipboardList, Clock, Copy, Inbox, Link2, TrendingUp, UserPlus, UserX, Wallet,
+  ArrowRight, CalendarDays, CalendarPlus, Check, ClipboardList, Clock, Inbox, TrendingUp, UserPlus, UserX, Wallet,
 } from "lucide-react";
-import { actions, select, useDb } from "@/prototype/store";
+import { select, useDb } from "@/modules/clinic/client";
+import { setAppointmentStatus } from "@/modules/scheduling/actions";
 import type { Appointment, Db } from "@/prototype/types";
 import { Avatar, Card, CardHeader, EmptyState, PageHeader } from "@/ui/primitives";
 import { StatusBadge } from "@/ui/status-badge";
 import { Button } from "@/ui/button";
 import { useToast } from "@/ui/toast";
 import { cap, dayLabel, expiresIn, fmt, money, time } from "@/lib/format";
-import { quickApprove } from "@/components/request-actions";
 import { useSession } from "@/components/session-context";
 import { cn } from "@/lib/cn";
 
 export default function InicioPage() {
   const db = useDb();
   const session = useSession();
-  if (!db) return null;
   const greeting = (() => {
     const h = new Date().getHours();
     return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
   })();
-  // Nome e papel são os reais (sessão); os blocos abaixo ainda mostram dados de demonstração (D-18).
   const first = session.user.name.replace(/^(Dra?\.)\s/, "").split(" ")[0];
 
   return (
@@ -38,7 +37,7 @@ export default function InicioPage() {
   );
 }
 
-const visible = (a: Appointment) => !["declined", "expired"].includes(a.status);
+const visible = (a: Appointment) => !["declined", "expired", "cancelled"].includes(a.status);
 const todays = (db: Db, professionalId?: string | null) =>
   db.appointments
     .filter((a) => isSameDay(new Date(a.startsAt), new Date()) && visible(a))
@@ -55,7 +54,7 @@ function ReceptionHome({ db }: { db: Db }) {
         <TodayCard db={db} />
       </div>
       <div className="flex flex-col gap-4">
-        <QuickActions db={db} />
+        <QuickActions />
         <NextUp db={db} />
       </div>
     </div>
@@ -65,7 +64,18 @@ function ReceptionHome({ db }: { db: Db }) {
 /* ---------- Profissional ---------- */
 
 function ProfessionalHome({ db }: { db: Db }) {
-  const pid = db.viewer.professionalId!;
+  const pid = db.viewer.professionalId;
+  if (!pid) {
+    return (
+      <Card>
+        <EmptyState
+          icon={CalendarDays}
+          title="Sua agenda ainda não foi criada"
+          description="Peça a quem gerencia a clínica para ligar sua conta a um profissional em Gestão → Profissionais."
+        />
+      </Card>
+    );
+  }
   const week = Array.from({ length: 7 }, (_, i) => addDays(startOfDay(new Date()), i + 1));
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -95,7 +105,16 @@ function ProfessionalHome({ db }: { db: Db }) {
 
 function ManagerHome({ db }: { db: Db }) {
   const now = new Date();
+  const { org } = useParams<{ org: string }>();
   const week = db.appointments.filter((a) => new Date(a.startsAt) >= startOfWeek(now, { weekStartsOn: 1 }) && new Date(a.startsAt) < addDays(startOfWeek(now, { weekStartsOn: 1 }), 7));
+  const active = select.activeProfessionals(db);
+  const todo = [
+    { done: active.length > 0, label: "Cadastrar profissionais", href: "gestao/profissionais" },
+    { done: db.services.some((s) => s.active && s.professionalIds.length > 0), label: "Cadastrar serviços e quem atende cada um", href: "gestao/servicos" },
+    { done: active.length > 0 && active.every((p) => db.availability.some((r) => r.professionalId === p.id)), label: "Configurar horários de atendimento", href: "gestao/horarios" },
+    { done: db.services.some((s) => s.priceCents != null), label: "Informar preços dos serviços", href: "gestao/servicos" },
+    { done: db.patients.length > 0, label: "Cadastrar o primeiro paciente", href: "pacientes?novo=1" },
+  ];
   const last30 = db.appointments.filter((a) => new Date(a.startsAt) >= subDays(now, 30) && new Date(a.startsAt) < now);
   const noShows = last30.filter((a) => a.status === "no_show").length;
   const attended = last30.filter((a) => a.status === "completed").length;
@@ -112,16 +131,15 @@ function ManagerHome({ db }: { db: Db }) {
         <Stat label="Atendimentos hoje" value={today.length} icon={CalendarDays} />
         <Stat label="Nesta semana" value={week.filter((a) => ["confirmed", "completed", "no_show"].includes(a.status)).length} icon={TrendingUp} />
         <Stat label="Faltas (30 dias)" value={`${attended + noShows ? Math.round((noShows / (attended + noShows)) * 100) : 0}%`} hint={`${noShows} de ${attended + noShows}`} icon={UserX} />
-        <Stat label="Solicitações" value={select.pendingRequests(db).length} hint="aguardando aprovação" icon={Inbox} />
+        <Stat label="Pacientes" value={db.patients.length} hint="cadastrados" icon={UserPlus} />
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex flex-col gap-4">
-          <TodayCard db={db} professionalId={db.viewer.professionalId} title="Meus atendimentos de hoje" actionable />
-          <PendingCard db={db} />
+          <TodayCard db={db} title="Agenda de hoje" actionable />
         </div>
         <div className="flex flex-col gap-4">
           <Card>
-            <CardHeader title="Financeiro do mês" description="Estimativa a partir dos atendimentos (Fase 8 trará lançamentos reais)." icon={Wallet} />
+            <CardHeader title="Financeiro do mês" description="Estimativa pelo preço dos serviços: concluídos e confirmados até o fim do mês." icon={Wallet} />
             <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-b-md border-t border-line bg-line">
               <div className="bg-surface p-4">
                 <dt className="text-caption text-ink-2">Recebido</dt>
@@ -134,15 +152,16 @@ function ManagerHome({ db }: { db: Db }) {
             </dl>
           </Card>
           <Card>
-            <CardHeader title="Pendências da clínica" icon={ClipboardList} />
+            <CardHeader title="Primeiros passos" icon={ClipboardList} />
             <ul className="flex flex-col gap-1 px-3 pb-4 text-body-sm">
-              <Todo done>Configurar horários de atendimento</Todo>
-              <Todo done>Cadastrar profissionais</Todo>
-              <Todo>Revisar preços dos serviços</Todo>
-              <Todo>Compartilhar o link de agendamento</Todo>
+              {todo.map((t) => (
+                <Todo key={t.label} done={t.done} href={`/c/${org}/${t.href}`}>
+                  {t.label}
+                </Todo>
+              ))}
             </ul>
           </Card>
-          <QuickActions db={db} />
+          <QuickActions />
         </div>
       </div>
     </div>
@@ -164,80 +183,63 @@ function Stat({ label, value, hint, icon: Icon }: { label: string; value: string
   );
 }
 
-function Todo({ children, done }: { children: React.ReactNode; done?: boolean }) {
-  return (
-    <li className="flex items-center gap-2.5 rounded-sm px-2 py-1.5">
-      <span className={cn("grid size-5 place-items-center rounded-full border", done ? "border-success bg-success text-white" : "border-line-strong")} aria-hidden>
+function Todo({ children, done, href }: { children: React.ReactNode; done?: boolean; href: string }) {
+  const body = (
+    <>
+      <span className={cn("grid size-5 shrink-0 place-items-center rounded-full border", done ? "border-success bg-success text-white" : "border-line-strong")} aria-hidden>
         {done && <Check className="size-3" />}
       </span>
       <span className={cn(done && "text-ink-3 line-through")}>{children}</span>
       <span className="sr-only">{done ? "(concluído)" : "(pendente)"}</span>
+    </>
+  );
+  return (
+    <li>
+      {done ? (
+        <span className="flex items-center gap-2.5 rounded-sm px-2 py-1.5">{body}</span>
+      ) : (
+        <Link href={href} className="flex items-center gap-2.5 rounded-sm px-2 py-1.5 hover:bg-muted">
+          {body}
+        </Link>
+      )}
     </li>
   );
 }
 
+/** Solicitações da página pública (etapa C). Some enquanto não houver nenhuma. */
 function PendingCard({ db, compact }: { db: Db; compact?: boolean }) {
   const { org } = useParams<{ org: string }>();
-  const toast = useToast();
   const pending = select.pendingRequests(db);
+  if (pending.length === 0) return null;
   const title = db.viewer.role === "professional" ? "Solicitações para mim" : "Solicitações pendentes";
 
   return (
     <Card>
       <CardHeader
         title={title}
-        description={pending.length ? `${pending.length} aguardando aprovação` : undefined}
+        description={`${pending.length} aguardando aprovação`}
         icon={Inbox}
         action={
-          pending.length > 0 && (
-            <Link href={`/c/${org}/agenda/solicitacoes`} className="inline-flex h-9 items-center gap-1 rounded-sm px-2 text-body-sm font-medium text-accent hover:bg-accent-subtle">
-              Ver todas <ArrowRight className="size-4" aria-hidden />
-            </Link>
-          )
+          <Link href={`/c/${org}/agenda/solicitacoes`} className="inline-flex h-9 items-center gap-1 rounded-sm px-2 text-body-sm font-medium text-accent hover:bg-accent-subtle">
+            Ver todas <ArrowRight className="size-4" aria-hidden />
+          </Link>
         }
       />
-      {pending.length === 0 ? (
-        <EmptyState icon={Check} title="Tudo em dia" description="Nenhuma solicitação aguardando resposta." className="py-8" />
-      ) : (
-        <ul className="divide-y divide-line border-t border-line">
-          {pending.slice(0, compact ? 2 : 3).map((a) => {
-            const req = select.request(db, a.id)!;
-            const svc = select.service(db, a.serviceId);
-            const prof = select.professional(db, a.professionalId);
-            return (
-              <li key={a.id} className="flex flex-col gap-3 px-5 py-3.5 sm:flex-row sm:items-center">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{req.name}</p>
-                  <p className="truncate text-body-sm text-ink-2">
-                    {svc.name} · {prof.name} · {dayLabel(a.startsAt)} {time(a.startsAt)}
-                  </p>
-                  <p className="mt-0.5 inline-flex items-center gap-1 text-caption text-warning">
-                    <Clock className="size-3.5" aria-hidden /> Expira em {expiresIn(a.holdExpiresAt!)}
-                  </p>
-                </div>
-                {!compact && (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => toast({ message: quickApprove(db, a.id), tone: "success" })}
-                      aria-label={`Aprovar solicitação de ${req.name}`}
-                    >
-                      Aprovar
-                    </Button>
-                    <Link
-                      href={`/c/${org}/agenda/solicitacoes?id=${a.id}`}
-                      className="inline-flex h-9 items-center rounded-sm border border-line-strong bg-surface px-3 text-body-sm font-medium shadow-xs hover:bg-muted"
-                      aria-label={`Revisar solicitação de ${req.name}`}
-                    >
-                      Revisar
-                    </Link>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <ul className="divide-y divide-line border-t border-line">
+        {pending.slice(0, compact ? 2 : 3).map((a) => (
+          <li key={a.id} className="px-5 py-3.5">
+            <p className="truncate font-medium">{select.personName(db, a)}</p>
+            <p className="truncate text-body-sm text-ink-2">
+              {select.service(db, a.serviceId).name} · {select.professional(db, a.professionalId).name} · {dayLabel(a.startsAt)} {time(a.startsAt)}
+            </p>
+            {a.holdExpiresAt && (
+              <p className="mt-0.5 inline-flex items-center gap-1 text-caption text-warning">
+                <Clock className="size-3.5" aria-hidden /> Expira em {expiresIn(a.holdExpiresAt)}
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
     </Card>
   );
 }
@@ -245,9 +247,15 @@ function PendingCard({ db, compact }: { db: Db; compact?: boolean }) {
 function TodayCard({ db, professionalId, title = "Agenda de hoje", actionable }: { db: Db; professionalId?: string | null; title?: string; actionable?: boolean }) {
   const { org } = useParams<{ org: string }>();
   const toast = useToast();
+  const [busy, start] = useTransition();
   const list = todays(db, professionalId);
   const now = new Date();
   const nextId = list.find((a) => new Date(a.endsAt) > now && ["confirmed", "requested"].includes(a.status))?.id;
+  const mark = (id: string, to: "completed" | "no_show", ok: string) =>
+    start(async () => {
+      const r = await setAppointmentStatus(org, id, to);
+      toast({ message: r.ok ? ok : (r.message ?? "Não foi possível alterar."), tone: r.ok ? "success" : "danger" });
+    });
 
   return (
     <Card>
@@ -268,26 +276,27 @@ function TodayCard({ db, professionalId, title = "Agenda de hoje", actionable }:
           {list.map((a) => {
             const prof = select.professional(db, a.professionalId);
             const isNext = a.id === nextId;
+            const canSee = select.canSeeDetails(db, a);
             return (
               <li key={a.id} className={cn("flex items-center gap-3 border-b border-line px-5 py-3 last:border-0", isNext && "bg-accent-subtle")}>
                 <span className="tabular w-12 shrink-0 text-body-sm font-semibold">{time(a.startsAt)}</span>
                 <span className="h-9 w-1 shrink-0 rounded-full" style={{ background: `var(--agenda-${prof.color})` }} aria-hidden />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">
-                    {select.canSeeDetails(db, a) ? select.personName(db, a) : "Horário ocupado"}
+                    {canSee ? select.personName(db, a) : "Horário ocupado"}
                     {isNext && <span className="ml-2 text-caption font-semibold text-accent">Próximo</span>}
                   </p>
                   <p className="truncate text-body-sm text-ink-2">
-                    {select.service(db, a.serviceId).name}
-                    {!professionalId && ` · ${prof.name}`}
+                    {canSee ? select.service(db, a.serviceId).name : prof.name}
+                    {canSee && !professionalId && ` · ${prof.name}`}
                   </p>
                 </div>
-                {actionable && a.status === "confirmed" && new Date(a.startsAt) <= now ? (
+                {actionable && canSee && a.status === "confirmed" && new Date(a.startsAt) <= now ? (
                   <div className="flex gap-1.5">
-                    <Button size="sm" variant="secondary" onClick={() => { actions.setStatus(a.id, "completed"); toast({ message: "Marcado como concluído.", tone: "success" }); }}>
+                    <Button size="sm" variant="secondary" disabled={busy} onClick={() => mark(a.id, "completed", "Marcado como concluído.")}>
                       Concluído
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { actions.setStatus(a.id, "no_show"); toast({ message: "Falta registrada.", tone: "info" }); }}>
+                    <Button size="sm" variant="ghost" disabled={busy} onClick={() => mark(a.id, "no_show", "Falta registrada.")}>
                       Faltou
                     </Button>
                   </div>
@@ -306,36 +315,38 @@ function TodayCard({ db, professionalId, title = "Agenda de hoje", actionable }:
 function NextUp({ db }: { db: Db }) {
   const now = new Date();
   const upcoming = db.appointments
-    .filter((a) => a.status === "confirmed" && new Date(a.startsAt) > now)
+    .filter((a) => a.status === "confirmed" && !a.hidden && new Date(a.startsAt) > now)
     .sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt))
     .slice(0, 4);
   return (
     <Card>
       <CardHeader title="Próximos pacientes" icon={Clock} />
-      <ul className="px-3 pb-3">
-        {upcoming.map((a) => {
-          const prof = select.professional(db, a.professionalId);
-          return (
-            <li key={a.id} className="flex items-center gap-3 rounded-sm px-2 py-2">
-              <Avatar name={select.personName(db, a)} color={prof.color} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-body-sm font-medium">{select.personName(db, a)}</p>
-                <p className="truncate text-caption text-ink-2">
-                  {dayLabel(a.startsAt)}, {time(a.startsAt)} · {prof.name}
-                </p>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      {upcoming.length === 0 ? (
+        <p className="px-5 pb-5 text-body-sm text-ink-3">Nenhum agendamento futuro.</p>
+      ) : (
+        <ul className="px-3 pb-3">
+          {upcoming.map((a) => {
+            const prof = select.professional(db, a.professionalId);
+            return (
+              <li key={a.id} className="flex items-center gap-3 rounded-sm px-2 py-2">
+                <Avatar name={select.personName(db, a)} color={prof.color} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-body-sm font-medium">{select.personName(db, a)}</p>
+                  <p className="truncate text-caption text-ink-2">
+                    {dayLabel(a.startsAt)}, {time(a.startsAt)} · {prof.name}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </Card>
   );
 }
 
-function QuickActions({ db }: { db: Db }) {
+function QuickActions() {
   const { org } = useParams<{ org: string }>();
-  const toast = useToast();
-  const url = typeof window !== "undefined" ? `${window.location.origin}/agendar/${db.org.slug}` : "";
   const item = "flex h-12 items-center gap-3 rounded-sm px-3 text-body-sm font-medium hover:bg-muted";
   return (
     <Card>
@@ -346,23 +357,6 @@ function QuickActions({ db }: { db: Db }) {
         </Link>
         <Link href={`/c/${org}/pacientes?novo=1`} className={item}>
           <UserPlus className="size-5 text-accent" aria-hidden /> Novo paciente
-        </Link>
-        <button
-          className={cn(item, "text-left")}
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(url);
-              toast({ message: "Link de agendamento copiado.", tone: "success" });
-            } catch {
-              toast({ message: `Copie manualmente: ${url}`, tone: "info" });
-            }
-          }}
-        >
-          <Copy className="size-5 text-accent" aria-hidden /> Copiar link de agendamento
-        </button>
-        <Link href={`/agendar/${db.org.slug}`} target="_blank" className={item}>
-          <Link2 className="size-5 text-accent" aria-hidden /> Abrir página pública
-          <span className="sr-only">(abre em nova aba)</span>
         </Link>
       </div>
     </Card>
