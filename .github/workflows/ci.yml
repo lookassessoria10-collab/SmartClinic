@@ -49,7 +49,16 @@ jobs:
         with:
           version: 2.122.0
       - run: supabase db start
-      - run: supabase test db
+      # As falhas viram anotação no resumo do CI (o log completo exige acesso de administrador).
+      - name: Testes do banco (pgTAP)
+        run: |
+          if ! supabase test db > pgtap.log 2>&1; then
+            cat pgtap.log
+            msg=$(grep -E "^(not ok|#)|Failed|Parse errors|ERROR|psql:" pgtap.log | head -60 | sed -e 's/%/%25/g' | sed -e ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=pgTAP::${msg}"
+            exit 1
+          fi
+          tail -5 pgtap.log
 
   e2e:
     name: Ponta a ponta (Playwright)

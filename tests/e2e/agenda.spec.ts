@@ -16,7 +16,7 @@ test.describe("cadastros e agenda reais", () => {
     await page.getByRole("textbox", { name: /Preço/ }).fill("300,00");
     // Novo serviço já vem marcado para todos os profissionais ativos.
     await page.getByRole("button", { name: "Cadastrar serviço" }).click();
-    await expect(page.getByRole("cell", { name: service })).toBeVisible();
+    await expect(page.getByRole("cell", { name: service, exact: true })).toBeVisible();
     await expect(page.getByRole("row", { name: new RegExp(service) })).toContainText("R$ 300,00");
 
     await page.goto("/c/clinica-aurora/pacientes");

@@ -26,9 +26,12 @@ select is(
   (select array_agg(c.relname::text order by c.relname)
      from pg_class c join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public' and c.relkind in ('r', 'p')
-      and has_table_privilege('authenticated', c.oid, 'DELETE, TRUNCATE')),
+      and has_table_privilege('authenticated', c.oid, 'DELETE, TRUNCATE')
+      -- Exceções deliberadas (sem dado pessoal; apagar é a operação natural; ambas auditadas):
+      -- vínculo profissional↔serviço e bloqueios de agenda (migrações 0011–0012).
+      and c.relname not in ('professional_services', 'schedule_blocks')),
   null::text[],
-  'authenticated não apaga nada diretamente (exclusão é lógica ou via função)'
+  'authenticated não apaga nada diretamente (exclusão é lógica ou via função), salvo as exceções listadas'
 );
 
 select is(

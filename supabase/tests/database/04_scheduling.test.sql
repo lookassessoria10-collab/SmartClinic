@@ -58,10 +58,11 @@ insert into public.patients (id, organization_id, full_name, phone_e164, created
   ('43000000-0000-0000-0000-0000000000a3', '40000000-0000-0000-0000-00000000000a', 'Paciente Três', '+5511900002003', '00000000-0000-0000-0000-0000000004a2'),
   ('43000000-0000-0000-0000-0000000000b1', '40000000-0000-0000-0000-00000000000b', 'Paciente B',    '+5511900002004', '00000000-0000-0000-0000-0000000004b1');
 
--- Horário de referência: daqui a 7 dias, 10:00 em São Paulo.
-create temp table horario as
-  select ((current_date + 7) + time '10:00') at time zone 'America/Sao_Paulo' as t;
-grant select on horario to authenticated;
+-- Horário de referência: daqui a 7 dias, 10:00 em São Paulo (função só desta transação).
+create function public.t_ref() returns timestamptz language sql stable set search_path = '' as $$
+  select ((current_date + 7) + time '10:00') at time zone 'America/Sao_Paulo'
+$$;
+grant execute on function public.t_ref() to authenticated;
 
 set local role authenticated;
 
@@ -70,26 +71,26 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 
 select lives_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a1',
-       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a1', (select t from horario)) $$,
+       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a1', public.t_ref()) $$,
   'recepção agenda dentro do horário');
 select is(
   (select ends_at - starts_at from public.appointments where professional_id = '41000000-0000-0000-0000-0000000000a1'),
   interval '45 minutes', 'fim do atendimento inclui o intervalo do serviço (30 + 15 min)');
 select throws_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a1',
-       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a2', (select t + interval '30 minutes' from horario)) $$,
+       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a2', (public.t_ref() + interval '30 minutes')) $$,
   'P0001', 'Esse horário acabou de ser ocupado.', 'sobreposição com o mesmo profissional é recusada pelo banco');
 select lives_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a1',
-       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a2', (select t + interval '45 minutes' from horario)) $$,
+       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a2', (public.t_ref() + interval '45 minutes')) $$,
   'encostar no fim do anterior não é conflito');
 select lives_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a2',
-       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a3', (select t from horario)) $$,
+       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a3', public.t_ref()) $$,
   'outro profissional no mesmo horário: permitido');
 select throws_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a1',
-       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a1', (select t - interval '3 hours' from horario)) $$,
+       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a1', (public.t_ref() - interval '3 hours')) $$,
   'P0001', 'Fora do horário de atendimento ou em um bloqueio.', 'fora do horário de atendimento é recusado');
 select throws_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a1',
@@ -98,30 +99,29 @@ select throws_ok(
 
 -- Bloqueio da clínica inteira (feriado) impede agendar.
 insert into public.schedule_blocks (organization_id, kind, starts_at, ends_at, reason)
-select '40000000-0000-0000-0000-00000000000a', 'holiday', t + interval '1 day' - interval '2 hours', t + interval '1 day' + interval '8 hours', 'Feriado'
-from horario;
+select '40000000-0000-0000-0000-00000000000a', 'holiday', public.t_ref() + interval '1 day' - interval '2 hours', public.t_ref() + interval '1 day' + interval '8 hours', 'Feriado';
 select throws_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a1',
-       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a1', (select t + interval '1 day' from horario)) $$,
+       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a1', (public.t_ref() + interval '1 day')) $$,
   'P0001', 'Fora do horário de atendimento ou em um bloqueio.', 'bloqueio impede agendar');
 
 -- Nada cruza de clínica.
 select throws_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a1',
-       '42000000-0000-0000-0000-0000000000b1', '43000000-0000-0000-0000-0000000000a1', (select t + interval '2 hours' from horario)) $$,
+       '42000000-0000-0000-0000-0000000000b1', '43000000-0000-0000-0000-0000000000a1', (public.t_ref() + interval '2 hours')) $$,
   'P0001', 'Este profissional não oferece este serviço.', 'serviço de outra clínica é recusado');
 select throws_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a1',
-       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000b1', (select t + interval '2 hours' from horario)) $$,
+       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000b1', (public.t_ref() + interval '2 hours')) $$,
   'P0001', 'Paciente não encontrado.', 'paciente de outra clínica é recusado');
 select throws_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000b', '41000000-0000-0000-0000-0000000000b1',
-       '42000000-0000-0000-0000-0000000000b1', '43000000-0000-0000-0000-0000000000b1', (select t from horario)) $$,
+       '42000000-0000-0000-0000-0000000000b1', '43000000-0000-0000-0000-0000000000b1', public.t_ref()) $$,
   '42501', null, 'recepção de A não agenda na clínica B');
 select throws_ok(
   $$ insert into public.appointments (organization_id, professional_id, service_id, patient_id, starts_at, ends_at, status)
      select '40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a1', '42000000-0000-0000-0000-0000000000a1',
-            '43000000-0000-0000-0000-0000000000a1', t + interval '3 hours', t + interval '4 hours', 'confirmed' from horario $$,
+            '43000000-0000-0000-0000-0000000000a1', public.t_ref() + interval '3 hours', public.t_ref() + interval '4 hours', 'confirmed' $$,
   '42501', null, 'escrita direta na tabela de agendamentos é negada (só pelas funções)');
 select throws_ok(
   $$ insert into public.patients (organization_id, full_name) values ('40000000-0000-0000-0000-00000000000b', 'Intruso') $$,
@@ -146,15 +146,15 @@ select is((select count(*)::int from public.appointment_events e join public.app
            where a.patient_id = '43000000-0000-0000-0000-0000000000a1'), 2, 'histórico registra criação e cancelamento');
 select lives_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a1',
-       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a1', (select t from horario)) $$,
+       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a1', public.t_ref()) $$,
   'horário cancelado volta a ficar livre');
 select throws_ok(
   $$ select public.reschedule_appointment((select id from public.appointments where patient_id = '43000000-0000-0000-0000-0000000000a2'),
-       (select t + interval '15 minutes' from horario)) $$,
+       (public.t_ref() + interval '15 minutes')) $$,
   'P0001', 'Esse horário já está ocupado.', 'remarcar para cima de outro atendimento é recusado');
 select lives_ok(
   $$ select public.reschedule_appointment((select id from public.appointments where patient_id = '43000000-0000-0000-0000-0000000000a2'),
-       (select t + interval '4 hours' from horario)) $$,
+       (public.t_ref() + interval '4 hours')) $$,
   'remarca para horário livre');
 
 -- Profissional Um ---------------------------------------------------------------------------------
@@ -171,7 +171,7 @@ select ok(not exists (select 1 from public.patients where id = '43000000-0000-00
   'profissional não vê paciente só de outro profissional');
 select throws_ok(
   $$ select public.create_appointment('40000000-0000-0000-0000-00000000000a', '41000000-0000-0000-0000-0000000000a2',
-       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a1', (select t + interval '5 hours' from horario)) $$,
+       '42000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-0000000000a1', (public.t_ref() + interval '5 hours')) $$,
   '42501', null, 'profissional não agenda na agenda de outro');
 select lives_ok(
   $$ insert into public.patients (organization_id, full_name, phone_e164)
@@ -199,8 +199,9 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 select throws_ok(
   $$ select public.delete_patient('43000000-0000-0000-0000-0000000000a1') $$,
   'P0001', 'O paciente tem agendamentos futuros. Cancele-os antes.', 'não exclui paciente com agendamento futuro');
-select lives_ok($$ select public.delete_patient('43000000-0000-0000-0000-0000000000a3') $$, 'gestora exclui paciente sem atendimentos futuros... ');
-select ok(not exists (select 1 from public.patients where id = '43000000-0000-0000-0000-0000000000a3'),
+select lives_ok($$ select public.delete_patient((select id from public.patients where full_name = 'Paciente do Prof Um')) $$,
+  'gestora exclui paciente sem agendamentos futuros');
+select ok(not exists (select 1 from public.patients where full_name = 'Paciente do Prof Um'),
   'paciente excluído some das listas (exclusão lógica)');
 
 -- Gestor B não enxerga nada de A ---------------------------------------------------------------

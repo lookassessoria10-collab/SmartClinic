@@ -117,6 +117,8 @@ $$;
 
 create trigger audit_services after insert or update or delete on public.services
   for each row execute function app.audit_row();
+create trigger audit_professional_services after insert or delete on public.professional_services
+  for each row execute function app.audit_row();
 create trigger audit_patients after insert or update or delete on public.patients
   for each row execute function app.audit_row_fields_only();
 
