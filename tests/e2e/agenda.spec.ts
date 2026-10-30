@@ -31,7 +31,7 @@ test.describe("cadastros e agenda reais", () => {
     const sheet = page.getByRole("dialog", { name: "Novo agendamento" });
     await expect(sheet).toBeVisible();
     await sheet.getByRole("combobox", { name: "Paciente" }).fill(patient);
-    await sheet.getByRole("option", { name: new RegExp(patient) }).click();
+    await sheet.getByRole("option", { name: new RegExp(`^${patient}`) }).click();
     await sheet.getByRole("combobox", { name: "Serviço" }).selectOption({ label: service });
     const horario = sheet.getByRole("combobox", { name: "Horário" });
     const escolhido = await horario.evaluate((s: HTMLSelectElement) => s.options[s.selectedIndex]?.text ?? "");
