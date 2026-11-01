@@ -27,9 +27,10 @@ export async function GET(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(new URL(next, request.url));
-    // Outro navegador (sem o verificador PKCE): o e-mail já foi confirmado pelo Supabase,
-    // então basta entrar com a senha.
+    // Outro navegador (sem o verificador PKCE). Cadastro: o e-mail já foi confirmado pelo
+    // Supabase, basta entrar. Nova senha: precisa abrir no mesmo navegador (ou usar nossos modelos).
     console.error("[auth] exchangeCodeForSession", error.code, error.message);
+    if (next.startsWith("/redefinir-senha")) return NextResponse.redirect(new URL("/login?erro=navegador", request.url));
     if (!next.startsWith("/convite/")) return NextResponse.redirect(new URL("/login?confirmado=1", request.url));
   }
   // Link de convite vencido (vale 1 h): o convite vale 7 dias, e a página dele oferece um novo link.

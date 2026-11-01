@@ -6,6 +6,8 @@ export const AUTH_MESSAGES = {
   invalidCredentials: "E-mail ou senha incorretos.",
   emailNotConfirmed: "Confirme seu e-mail pelo link que enviamos antes de entrar.",
   tooManyAttempts: "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
+  loginPaused: "Por segurança, pausamos o acesso deste e-mail após várias senhas incorretas. Aguarde 15 minutos ou use “Esqueci minha senha”.",
+  accountExists: "Já existe uma conta com este e-mail. Entre com sua senha ou use “Esqueci minha senha”.",
   weakPassword: "Escolha uma senha mais forte (evite senhas comuns ou já vazadas).",
   linkInvalid: "O link expirou ou já foi usado. Peça um novo.",
   emailSendFailed: "Não conseguimos enviar o e-mail de confirmação agora. Tente de novo em alguns minutos.",
@@ -34,6 +36,10 @@ export function authErrorMessage(error: { code?: string; status?: number; messag
       return AUTH_MESSAGES.tooManyAttempts;
     case "weak_password":
       return AUTH_MESSAGES.weakPassword;
+    // Só acontece com a confirmação de e-mail desligada (com ela ligada o Supabase responde igual).
+    case "user_already_exists":
+    case "email_exists":
+      return AUTH_MESSAGES.accountExists;
     case "otp_expired":
     case "flow_state_expired":
     case "flow_state_not_found":

@@ -246,6 +246,6 @@ export async function requestInvitationLink(token: string): Promise<ActionState>
   if (!/^[a-f0-9]{64}$/.test(token)) return generic;
   const admin = createSupabaseAdminClient();
   const { data } = await admin.rpc("invitation_email_for_token", { p_token: token });
-  if (data) await sendAccessLink(data, invitationLink(token));
+  if (data) await sendAccessLink(data, await invitationLink(token));
   return generic;
 }

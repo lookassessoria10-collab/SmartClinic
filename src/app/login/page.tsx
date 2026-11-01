@@ -25,6 +25,7 @@ function LoginForm() {
   // Avisos vindos de redirecionamentos (ex.: depois de sair ou de um link vencido).
   const flash =
     params.get("erro") === "link" ? { tone: "danger" as const, text: AUTH_MESSAGES.linkInvalid }
+    : params.get("erro") === "navegador" ? { tone: "danger" as const, text: "Abra o link de nova senha no mesmo aparelho e navegador em que você pediu, ou peça um novo link em “Esqueci minha senha”." }
     : params.get("saiu") ? { tone: "info" as const, text: "Você saiu da sua conta." }
     : params.get("confirmado") ? { tone: "success" as const, text: "E-mail confirmado. Entre com sua senha para continuar." }
     : params.get("next") ? { tone: "info" as const, text: "Entre para continuar." }

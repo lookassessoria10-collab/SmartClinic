@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { publicEnv } from "@/lib/env";
 import { safeNextPath } from "@/lib/safe-redirect";
+import { siteUrl } from "@/server/site-url";
 import { createSupabaseServerClient } from "@/server/supabase";
 import { getCurrentUser } from "@/server/auth";
 import { AUTH_MESSAGES, authErrorMessage } from "./messages";
@@ -28,7 +28,7 @@ export async function signIn(_prev: FormState, formData: FormData): Promise<Form
   const { email, password } = parsed.data;
 
   if (await isLoginThrottled(email)) {
-    return { message: AUTH_MESSAGES.tooManyAttempts, values };
+    return { message: AUTH_MESSAGES.loginPaused, values };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -37,7 +37,8 @@ export async function signIn(_prev: FormState, formData: FormData): Promise<Form
     if (error?.code !== "email_not_confirmed") await recordAuthEvent("auth.login_failed", { email });
     return { message: authErrorMessage(error), values };
   }
-  await recordAuthEvent("auth.login", { userId: data.user.id });
+  // Com o hash do e-mail: login com sucesso zera a contagem de falhas desse e-mail.
+  await recordAuthEvent("auth.login", { userId: data.user.id, email });
 
   const next = safeNextPath(formData.get("next"), "");
   // MFA ativado: a senha abre só o primeiro passo; o código vem na tela seguinte.
@@ -57,12 +58,12 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
   if (!parsed.success) return { fields: fieldErrors(parsed.error), values };
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
       data: { full_name: parsed.data.fullName },
-      emailRedirectTo: `${publicEnv.siteUrl}/auth/confirm?next=/onboarding`,
+      emailRedirectTo: `${await siteUrl()}/auth/confirm?next=/onboarding`,
     },
   });
   // E-mail já cadastrado não gera erro (o Supabase responde igual): não revela cadastro.
@@ -73,6 +74,8 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
     return { message: authErrorMessage(error), values };
   }
   await recordAuthEvent("auth.signup", { email: parsed.data.email });
+  // Confirmação de e-mail desligada no projeto: a conta já nasce com sessão → segue direto.
+  if (data.session) redirect("/onboarding");
   return { ok: true, values: { email: parsed.data.email } };
 }
 
@@ -84,7 +87,7 @@ export async function requestPasswordReset(_prev: FormState, formData: FormData)
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${publicEnv.siteUrl}/auth/confirm?next=/redefinir-senha/nova`,
+    redirectTo: `${await siteUrl()}/auth/confirm?next=/redefinir-senha/nova`,
   });
   // Mesma resposta exista ou não a conta. Só o limite de envio é informado.
   if (error && (error.status === 429 || error.code === "over_email_send_rate_limit")) {
@@ -113,7 +116,8 @@ export async function updatePassword(_prev: FormState, formData: FormData): Prom
   }
   // Encerra as outras sessões: se a senha vazou, quem a usava perde o acesso.
   await supabase.auth.signOut({ scope: "others" });
-  await recordAuthEvent("auth.password_changed", { userId: user.id });
+  // Troca de senha libera um e-mail que estava pausado por tentativas erradas.
+  await recordAuthEvent("auth.password_changed", { userId: user.id, email: user.email });
   redirect(await homeAfterLogin());
 }
 

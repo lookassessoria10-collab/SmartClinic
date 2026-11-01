@@ -9,13 +9,15 @@ import { LAST_CLINIC_COOKIE } from "./constants";
  * Limite de tentativas de login e auditoria de autenticação (docs/12 §3.4, docs/09 S5).
  * Fica na tabela audit_logs (só-anexar), gravada com o cliente admin porque a tentativa
  * falha não tem usuário autenticado. E-mail e IP são guardados apenas como hash.
+ *
+ * Regra do limite (migração 0013, função login_throttled): 8 falhas por e-mail contadas a
+ * partir do mais recente entre 15 min atrás, criação da conta, último login e última troca
+ * de senha; 30 por IP em 15 min. Problema na auditoria NUNCA derruba login ou cadastro: o
+ * Supabase Auth tem limites próprios por IP, então aqui falhamos "aberto" e registramos.
  */
 
-const WINDOW_MINUTES = 15;
-const MAX_FAILURES_PER_EMAIL = 5;
-const MAX_FAILURES_PER_IP = 30;
-
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
+const emailHash = (email: string) => sha256(email.trim().toLowerCase());
 const toBytea = (hex: string) => `\\x${hex}`;
 
 async function clientIp() {
@@ -24,26 +26,18 @@ async function clientIp() {
 }
 
 export async function isLoginThrottled(email: string): Promise<boolean> {
-  const admin = createSupabaseAdminClient();
-  const since = new Date(Date.now() - WINDOW_MINUTES * 60_000).toISOString();
-  const emailHash = sha256(email);
-  const ipHash = toBytea(sha256(await clientIp()));
-
-  const [byEmail, byIp] = await Promise.all([
-    admin
-      .from("audit_logs")
-      .select("id", { count: "exact", head: true })
-      .eq("action", "auth.login_failed")
-      .eq("changes->>email_hash", emailHash)
-      .gte("created_at", since),
-    admin
-      .from("audit_logs")
-      .select("id", { count: "exact", head: true })
-      .eq("action", "auth.login_failed")
-      .eq("ip_hash", ipHash)
-      .gte("created_at", since),
-  ]);
-  return (byEmail.count ?? 0) >= MAX_FAILURES_PER_EMAIL || (byIp.count ?? 0) >= MAX_FAILURES_PER_IP;
+  try {
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin.rpc("login_throttled", { p_email: email, p_ip_hash: toBytea(sha256(await clientIp())) });
+    if (error) {
+      console.error("[auth] login_throttled", error.code, error.message);
+      return false;
+    }
+    return data === true;
+  } catch (e) {
+    console.error("[auth] limite de tentativas indisponível", e instanceof Error ? e.message : e);
+    return false;
+  }
 }
 
 export async function recordAuthEvent(
@@ -58,19 +52,23 @@ export async function recordAuthEvent(
     | "auth.mfa_failed"
     | "auth.mfa_enabled"
     | "auth.mfa_disabled",
-  opts: { email?: string; userId?: string } = {},
+  opts: { email?: string | null; userId?: string } = {},
 ) {
-  const admin = createSupabaseAdminClient();
-  const { error } = await admin.from("audit_logs").insert({
-    actor_user_id: opts.userId ?? null,
-    actor_kind: opts.userId ? "member" : "public",
-    action,
-    entity: "auth",
-    changes: opts.email ? { email_hash: sha256(opts.email) } : null,
-    ip_hash: toBytea(sha256(await clientIp())),
-  });
-  // Falha de auditoria não pode derrubar o login, mas precisa aparecer nos logs do servidor.
-  if (error) console.error("[auditoria] falha ao registrar", action, error.message);
+  try {
+    const admin = createSupabaseAdminClient();
+    const { error } = await admin.from("audit_logs").insert({
+      actor_user_id: opts.userId ?? null,
+      actor_kind: opts.userId ? "member" : "public",
+      action,
+      entity: "auth",
+      changes: opts.email ? { email_hash: emailHash(opts.email) } : null,
+      ip_hash: toBytea(sha256(await clientIp())),
+    });
+    // Falha de auditoria não pode derrubar o login, mas precisa aparecer nos logs do servidor.
+    if (error) console.error("[auditoria] falha ao registrar", action, error.message);
+  } catch (e) {
+    console.error("[auditoria] indisponível", action, e instanceof Error ? e.message : e);
+  }
 }
 
 /** Para onde ir depois de entrar: última clínica usada, primeira clínica, ou onboarding. */

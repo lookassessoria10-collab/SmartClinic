@@ -335,6 +335,9 @@ isOneToOne: false
                            },
 "set_weekly_availability":
 { Args: { "p_professional": string,"p_rules": Json }; Returns: undefined
+                           },
+"login_throttled":
+{ Args: { "p_email": string,"p_ip_hash": string }; Returns: boolean
                            }
           }
           Enums: {
