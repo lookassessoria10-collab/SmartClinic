@@ -26,6 +26,7 @@ function LoginForm() {
   const flash =
     params.get("erro") === "link" ? { tone: "danger" as const, text: AUTH_MESSAGES.linkInvalid }
     : params.get("saiu") ? { tone: "info" as const, text: "Você saiu da sua conta." }
+    : params.get("confirmado") ? { tone: "success" as const, text: "E-mail confirmado. Entre com sua senha para continuar." }
     : params.get("next") ? { tone: "info" as const, text: "Entre para continuar." }
     : null;
 

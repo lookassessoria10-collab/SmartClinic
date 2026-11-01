@@ -68,6 +68,8 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
   // E-mail já cadastrado não gera erro (o Supabase responde igual): não revela cadastro.
   if (error) {
     if (error.code === "weak_password") return { fields: { password: AUTH_MESSAGES.weakPassword }, values };
+    // Sem o motivo nos logs do servidor não há como diagnosticar (o e-mail não é registrado).
+    console.error("[auth] signUp", error.status, error.code, error.message);
     return { message: authErrorMessage(error), values };
   }
   await recordAuthEvent("auth.signup", { email: parsed.data.email });

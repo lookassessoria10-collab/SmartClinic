@@ -8,10 +8,21 @@ export const AUTH_MESSAGES = {
   tooManyAttempts: "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
   weakPassword: "Escolha uma senha mais forte (evite senhas comuns ou já vazadas).",
   linkInvalid: "O link expirou ou já foi usado. Peça um novo.",
+  emailSendFailed: "Não conseguimos enviar o e-mail de confirmação agora. Tente de novo em alguns minutos.",
   unexpected: "Não foi possível concluir agora. Tente de novo em instantes.",
 } as const;
 
-export function authErrorMessage(error: { code?: string; status?: number } | null | undefined): string {
+/** Falha do Auth ao ENVIAR o e-mail (SMTP recusou, endereço não autorizado no e-mail padrão). */
+export function isEmailSendFailure(error: { code?: string; status?: number; message?: string } | null | undefined) {
+  return (
+    error?.code === "email_address_not_authorized" ||
+    error?.code === "email_address_invalid" ||
+    (error?.status === 500 && /sending|smtp|email/i.test(error.message ?? ""))
+  );
+}
+
+export function authErrorMessage(error: { code?: string; status?: number; message?: string } | null | undefined): string {
+  if (isEmailSendFailure(error)) return AUTH_MESSAGES.emailSendFailed;
   switch (error?.code) {
     case "invalid_credentials":
     case "user_not_found":
