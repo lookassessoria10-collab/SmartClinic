@@ -29,7 +29,7 @@ export function ClinicSettings({ slug, writable, clinic, slugJustChanged }: { sl
       <div className="grid max-w-2xl gap-4">
         <DetailsForm slug={slug} writable={writable} clinic={clinic} />
         <SlugForm slug={slug} writable={writable} current={clinic.slug} justChanged={slugJustChanged} />
-        <p className="text-caption text-ink-2">Fuso horário: {clinic.timezone} (alteração disponível com as unidades, em fase futura).</p>
+        <p className="text-caption text-ink-2">Fuso horário: {clinic.timezone === "America/Sao_Paulo" ? "horário de Brasília" : clinic.timezone}</p>
       </div>
     </>
   );

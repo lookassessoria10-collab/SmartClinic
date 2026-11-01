@@ -58,9 +58,6 @@ export default function SignUpPage() {
         <Field label="Senha" error={state.fields?.password} hint={`Pelo menos ${PASSWORD_MIN} caracteres. Uma frase curta é mais fácil de lembrar.`}>
           <PasswordInput name="password" autoComplete="new-password" />
         </Field>
-        <p className="text-caption text-ink-2">
-          Ao criar a conta, você concorda com os termos de uso e a política de privacidade (textos definitivos na Fase 10).
-        </p>
         <Button type="submit" size="lg" loading={pending}>
           Criar conta
         </Button>

@@ -21,7 +21,8 @@ export function BrandMark({ className }: { className?: string }) {
       )}
     >
       <span className="absolute inset-x-0 top-0 h-1/2 bg-[linear-gradient(180deg,rgb(255_255_255/0.35),transparent)]" />
-      <span className="relative font-[family-name:var(--font-display)] leading-none font-semibold">s</span>
+      {/* "s" como conteúdo de CSS: é desenho, não texto (não entra no nome de links ao redor). */}
+      <span className="relative font-[family-name:var(--font-display)] leading-none font-semibold before:content-['s']" />
     </span>
   );
 }

@@ -11,7 +11,7 @@ export default function FinanceiroPage() {
         <EmptyState
           icon={Wallet}
           title="Em breve"
-          description="O financeiro básico (recebimentos, despesas e pendências) é a próxima etapa depois da agenda. Enquanto isso, o Início mostra uma estimativa pelo preço dos serviços."
+          description="Recebimentos, despesas e pendências da clínica num só lugar. Enquanto isso, o Início mostra uma estimativa do mês pelo preço dos serviços."
         />
       </Card>
     </>

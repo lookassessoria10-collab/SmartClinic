@@ -48,9 +48,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       {/* Barra lateral (desktop/tablet): vidro flutuando sobre a névoa da marca */}
       <aside className="glass fixed top-3 bottom-3 left-3 z-20 hidden w-[76px] flex-col rounded-[28px] border p-2 md:flex lg:w-[244px] lg:p-3">
-        <Link href={`${base}/inicio`} className="mb-3 flex h-11 items-center justify-center gap-2.5 rounded-full px-1.5 lg:justify-start" aria-label="smartclin — Início">
+        {/* Nome acessível = texto visível ("smartclin") + complemento só para leitor de tela. */}
+        <Link href={`${base}/inicio`} className="mb-3 flex h-11 items-center justify-center gap-2.5 rounded-full px-1.5 lg:justify-start">
           <BrandMark className="size-9 text-title-2" />
           <Wordmark className="hidden text-[1.375rem] leading-none text-accent lg:inline" />
+          <span className="sr-only lg:hidden">smartclin</span>
+          <span className="sr-only">, ir para o Início</span>
         </Link>
         <OrgSwitcher session={session} />
         <nav aria-label="Principal" className="mt-3 flex flex-col gap-1">
