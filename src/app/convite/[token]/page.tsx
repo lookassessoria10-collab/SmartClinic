@@ -32,7 +32,7 @@ async function Invitation({ params }: { params: Promise<{ token: string }> }) {
         <div className="flex flex-col gap-3">
           <Link
             href={`/login?next=${encodeURIComponent(next)}`}
-            className="inline-flex h-12 items-center justify-center rounded-sm bg-accent px-5 text-body font-medium text-on-accent hover:bg-accent-hover"
+            className="inline-flex h-12 items-center justify-center glass-tint rounded-full px-5 text-body font-medium hover:brightness-[1.06]"
           >
             Entrar
           </Link>

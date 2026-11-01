@@ -5,7 +5,8 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export function Card({ className, children, as: Tag = "section" }: { className?: string; children: ReactNode; as?: "section" | "div" | "article" }) {
-  return <Tag className={cn("rounded-md border border-line bg-surface shadow-xs", className)}>{children}</Tag>;
+  // Conteúdo: superfície sólida (legibilidade), flutuando sobre a névoa com sombra difusa.
+  return <Tag className={cn("rounded-lg border border-white/80 bg-surface shadow-sm", className)}>{children}</Tag>;
 }
 
 export function CardHeader({ title, description, action, icon: Icon }: { title: string; description?: string; action?: ReactNode; icon?: LucideIcon }) {
@@ -78,7 +79,7 @@ interface SegmentedProps<T extends string> {
 /** Controle segmentado (radiogroup). O item selecionado usa vidro (D-13). */
 export function Segmented<T extends string>({ label, value, options, onChange, className }: SegmentedProps<T>) {
   return (
-    <div role="radiogroup" aria-label={label} className={cn("inline-flex rounded-sm bg-muted p-0.5", className)}>
+    <div role="radiogroup" aria-label={label} className={cn("glass inline-flex rounded-full border p-1", className)}>
       {options.map((o) => {
         const selected = o.value === value;
         return (
@@ -99,8 +100,8 @@ export function Segmented<T extends string>({ label, value, options, onChange, c
             data-v={o.value}
             tabIndex={selected ? 0 : -1}
             className={cn(
-              "h-9 rounded-[7px] px-3 text-body-sm font-medium transition-colors duration-(--duration-fast)",
-              selected ? "bg-surface text-ink shadow-sm" : "text-ink-2 hover:text-ink",
+              "h-8 rounded-full px-3.5 text-body-sm font-medium transition-[background-color,color,box-shadow] duration-(--duration-fast)",
+              selected ? "bg-white text-accent shadow-[inset_0_1px_0_rgb(255_255_255/1),0_2px_8px_rgb(6_47_94/0.14)]" : "text-ink-2 hover:text-ink",
             )}
           >
             {o.label}

@@ -11,8 +11,14 @@ import { canAccess, ROLE_LABEL, type Section } from "@/prototype/access";
 import type { Role } from "@/prototype/types";
 import { useSession, type ClinicSession } from "./session-context";
 import { Avatar, EmptyState, Skeleton } from "@/ui/primitives";
+import { BrandMark, Wordmark } from "@/ui/brand";
 import { Button } from "@/ui/button";
 import { cn } from "@/lib/cn";
+
+// Item ativo: "pílula" de vidro mais opaca, com brilho na borda de cima.
+const nav = {
+  active: "bg-white/90 text-accent shadow-[inset_0_1px_0_rgb(255_255_255/1),0_2px_10px_rgb(6_47_94/0.12)]",
+};
 
 const NAV: { section: Section; label: string; icon: LucideIcon }[] = [
   { section: "inicio", label: "Início", icon: Home },
@@ -36,14 +42,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pending = select.pendingRequests(db).length;
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(1200px_600px_at_100%_-10%,var(--color-accent-subtle),transparent_60%)]">
-      <a href="#conteudo" className="sr-only z-[70] rounded-sm bg-surface px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
+    <div className="min-h-dvh">
+      <a href="#conteudo" className="sr-only z-[70] rounded-full bg-surface px-4 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         Pular para o conteúdo
       </a>
-      {/* Barra lateral (desktop/tablet) */}
-      <aside className="glass fixed top-3 bottom-3 left-3 z-20 hidden w-[76px] flex-col rounded-lg border p-2 md:flex lg:w-[240px] lg:p-3">
+      {/* Barra lateral (desktop/tablet): vidro flutuando sobre a névoa da marca */}
+      <aside className="glass fixed top-3 bottom-3 left-3 z-20 hidden w-[76px] flex-col rounded-[28px] border p-2 md:flex lg:w-[244px] lg:p-3">
+        <Link href={`${base}/inicio`} className="mb-3 flex h-11 items-center justify-center gap-2.5 rounded-full px-1.5 lg:justify-start" aria-label="smartclin — Início">
+          <BrandMark className="size-9 text-title-2" />
+          <Wordmark className="hidden text-[1.375rem] leading-none text-accent lg:inline" />
+        </Link>
         <OrgSwitcher session={session} />
-        <nav aria-label="Principal" className="mt-4 flex flex-col gap-1">
+        <nav aria-label="Principal" className="mt-3 flex flex-col gap-1">
           {items.map((n) => {
             const active = current === n.section;
             return (
@@ -52,8 +62,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 href={`${base}/${n.section}`}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex h-11 items-center justify-center gap-3 rounded-sm px-3 text-body-sm font-medium transition-colors lg:justify-start",
-                  active ? "bg-surface text-accent shadow-sm" : "text-ink-2 hover:bg-white/60 hover:text-ink",
+                  "relative flex h-11 items-center justify-center gap-3 rounded-full px-3 text-body-sm font-medium transition-[background-color,color,box-shadow] duration-(--duration-fast) lg:justify-start",
+                  active ? nav.active : "text-ink-2 hover:bg-white/60 hover:text-ink",
                 )}
               >
                 <n.icon className="size-5 shrink-0" aria-hidden />
@@ -74,17 +84,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Cabeçalho (celular) */}
-      <header className="glass sticky top-2 z-20 mx-2 mt-2 flex h-14 items-center justify-between rounded-lg border px-3 md:hidden">
+      <header className="glass sticky top-2 z-20 mx-2 mt-2 flex h-14 items-center justify-between rounded-full border px-2 md:hidden">
         <OrgSwitcher session={session} compact />
         <UserMenu name={session.user.name} email={session.user.email} role={role} accountHref={`${base}/conta`} compact />
       </header>
 
-      <main id="conteudo" className="px-4 pt-6 pb-28 md:pt-8 md:pr-6 md:pb-10 md:pl-[100px] lg:pl-[272px]">
+      <main id="conteudo" className="px-4 pt-6 pb-28 md:pt-8 md:pr-6 md:pb-10 md:pl-[100px] lg:pl-[276px]">
         <div className="mx-auto max-w-[1400px]">{canAccess(role, current) ? children : <NoAccess />}</div>
       </main>
 
       {/* Barra inferior (celular) */}
-      <nav aria-label="Principal" className="glass fixed inset-x-2 bottom-2 z-20 flex rounded-xl border p-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] md:hidden">
+      {/* Barra de abas flutuante em cápsula, como no iOS */}
+      <nav
+        aria-label="Principal"
+        className="glass fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 flex rounded-full border p-1.5 md:hidden"
+      >
         {items.map((n) => {
           const active = current === n.section;
           return (
@@ -93,8 +107,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               href={`${base}/${n.section}`}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg text-caption font-medium",
-                active ? "bg-surface text-accent shadow-sm" : "text-ink-2",
+                "relative flex min-h-13 flex-1 flex-col items-center justify-center gap-0.5 rounded-full text-caption font-medium",
+                active ? nav.active : "text-ink-2",
               )}
             >
               <n.icon className="size-5" aria-hidden />
@@ -119,12 +133,12 @@ function OrgSwitcher({ session, compact }: { session: ClinicSession; compact?: b
     <Menu.Root>
       <Menu.Trigger
         className={cn(
-          "flex h-12 w-full items-center gap-2.5 rounded-sm px-1.5 text-left hover:bg-white/60",
+          "flex h-12 w-full items-center gap-2.5 rounded-[18px] px-1.5 text-left hover:bg-white/60",
           !compact && "justify-center lg:justify-start",
         )}
       >
         {/* Nome acessível = texto visível + complemento só para leitor de tela (WCAG 2.5.3). */}
-        <span className="grid size-9 shrink-0 place-items-center rounded-sm bg-accent text-body-sm font-semibold text-on-accent" aria-hidden>
+        <span className="glass-tint grid size-9 shrink-0 place-items-center rounded-[30%] text-body-sm font-semibold" aria-hidden>
           {name[0]}
         </span>
         <span className={cn("min-w-0 flex-1", !compact && "sr-only lg:not-sr-only lg:block")}>
@@ -142,7 +156,7 @@ function OrgSwitcher({ session, compact }: { session: ClinicSession; compact?: b
             <Link
               href={`/c/${c.slug}/inicio`}
               aria-current={c.slug === slug ? "true" : undefined}
-              className="flex min-h-10 items-center gap-2 rounded-sm px-2 py-1.5 text-body-sm outline-none data-[highlighted]:bg-accent-subtle"
+              className="flex min-h-10 items-center gap-2 rounded-[14px] px-2.5 py-1.5 text-body-sm outline-none data-[highlighted]:bg-accent-subtle"
             >
               <Check className={cn("size-4 shrink-0 text-accent", c.slug !== slug && "invisible")} aria-hidden />
               <span className="min-w-0 flex-1">
@@ -154,7 +168,7 @@ function OrgSwitcher({ session, compact }: { session: ClinicSession; compact?: b
         ))}
         <Menu.Separator className="my-1 h-px bg-line" />
         <Menu.Item asChild>
-          <Link href="/onboarding" className="flex h-10 items-center gap-2 rounded-sm px-2 text-body-sm outline-none data-[highlighted]:bg-accent-subtle">
+          <Link href="/onboarding" className="flex h-10 items-center gap-2 rounded-[14px] px-2.5 text-body-sm outline-none data-[highlighted]:bg-accent-subtle">
             <Plus className="size-4 text-ink-2" aria-hidden /> Criar outra clínica
           </Link>
         </Menu.Item>
@@ -166,7 +180,7 @@ function OrgSwitcher({ session, compact }: { session: ClinicSession; compact?: b
 function UserMenu({ name, email, role, accountHref, compact }: { name: string; email: string | null; role: Role; accountHref: string; compact?: boolean }) {
   return (
     <Menu.Root>
-      <Menu.Trigger className="flex w-full items-center gap-2.5 rounded-sm p-1.5 text-left hover:bg-white/60">
+      <Menu.Trigger className="flex w-full items-center gap-2.5 rounded-full p-1.5 text-left hover:bg-white/60">
         <Avatar name={name} />
         <span className={cn("min-w-0 flex-1", compact ? "sr-only" : "sr-only lg:not-sr-only lg:block")}>
           <span className="sr-only">Conta: </span>
@@ -180,7 +194,7 @@ function UserMenu({ name, email, role, accountHref, compact }: { name: string; e
           {email && <span className="block text-caption text-ink-3">{email}</span>}
         </Menu.Label>
         <Menu.Item asChild>
-          <Link href={accountHref} className="flex h-10 items-center gap-2 rounded-sm px-2 text-body-sm outline-none data-[highlighted]:bg-accent-subtle">
+          <Link href={accountHref} className="flex h-10 items-center gap-2 rounded-[14px] px-2.5 text-body-sm outline-none data-[highlighted]:bg-accent-subtle">
             <ShieldCheck className="size-4" aria-hidden /> Minha conta e segurança
           </Link>
         </Menu.Item>
@@ -198,7 +212,7 @@ function MenuContent({ children }: { children: ReactNode }) {
       <Menu.Content
         sideOffset={6}
         align="start"
-        className="glass-strong z-30 min-w-56 rounded-md border p-1 animate-[fade-in_var(--duration-base)]"
+        className="glass-strong z-30 min-w-60 rounded-[22px] border p-1.5 origin-(--radix-dropdown-menu-content-transform-origin) animate-[pop-in_var(--duration-base)_var(--ease-spring)]"
       >
         {children}
       </Menu.Content>
@@ -211,7 +225,7 @@ function MenuItem({ children, onSelect, disabled }: { children: ReactNode; onSel
     <Menu.Item
       onSelect={onSelect}
       disabled={disabled}
-      className="flex h-10 cursor-default items-center gap-2 rounded-sm px-2 text-body-sm outline-none data-[disabled]:text-ink-3 data-[highlighted]:bg-accent-subtle"
+      className="flex h-10 cursor-default items-center gap-2 rounded-[14px] px-2.5 text-body-sm outline-none data-[disabled]:text-ink-3 data-[highlighted]:bg-accent-subtle"
     >
       {children}
     </Menu.Item>
@@ -235,7 +249,7 @@ function NoAccess() {
 
 export function ShellSkeleton() {
   return (
-    <div className="p-4 md:pt-8 md:pl-[100px] lg:pl-[272px]" aria-busy="true" aria-label="Carregando">
+    <div className="p-4 md:pt-8 md:pl-[100px] lg:pl-[276px]" aria-busy="true" aria-label="Carregando">
       <Skeleton className="h-8 w-48" />
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <Skeleton className="h-40" />

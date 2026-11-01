@@ -7,11 +7,16 @@ onde algo "flutua" sobre o conteúdo. Inspirado nos princípios das Human Interf
 (clareza, deferência ao conteúdo, profundidade), **sem copiar** ícones, fontes proprietárias
 (SF Pro), componentes ou identidade da Apple.
 
-Elementos de identidade própria:
-- Cor de destaque **azul-petróleo** (não o azul de sistema da Apple).
-- Fonte aberta **Inter** (licença OFL), com algarismos tabulares em agenda e financeiro.
+Elementos de identidade própria — marca **smartclin** (D-01, definida em 2026-11-01):
+- Logotipo: a palavra `smartclin` em **Poppins** Medium, minúsculas, em azul `#0E6BB8` sobre
+  claro ou em branco sobre o degradê da marca (`src/ui/brand.tsx`, ícone em `src/app/icon.svg`).
+- Cores da marca: azul `#0E6BB8` (destaque, ≈ 5,5:1 sobre branco), marinho `#062F5E`, céu `#8CCBF2`.
+- Fontes abertas (OFL): **Poppins** nos títulos e na marca; **Inter** no corpo, com algarismos
+  tabulares em agenda e financeiro.
 - Ícones **Lucide** com traço 1,75 px, sempre acompanhados de rótulo em navegação.
-- Assinatura visual: o "vidro" usa um leve tom do azul-petróleo na borda superior (realce), em vez de branco puro.
+- Estética inspirada no **Liquid Glass** (2026-11-01): fundo de névoa azul da marca, camada de
+  navegação em vidro com brilho especular, controles em cápsula, cantos grandes e concêntricos.
+  O conteúdo continua opaco — o vidro é só para o que flutua (ver "Transparência e vidro").
 
 ## 2. Tokens
 
@@ -109,11 +114,18 @@ Padding padrão de card: 20–24; gutter de página: 24 (desktop) / 16 (celular)
 
 | Token | Valor |
 |-------|-------|
-| `--glass-bg` | `rgb(255 255 255 / .72)` |
-| `--glass-bg-strong` | `rgb(255 255 255 / .86)` (menus com texto) |
-| `--glass-blur` | `saturate(180%) blur(20px)` |
-| `--glass-border` | `1px solid rgb(255 255 255 / .6)` + realce superior `inset 0 1px 0 rgb(31 111 139 / .08)` |
-| `--overlay-scrim` | `rgb(20 23 28 / .32)` |
+| `--glass-bg` | `rgb(255 255 255 / .58)` |
+| `--glass-bg-strong` | `rgb(255 255 255 / .8)` (menus, painéis e cartões com texto) |
+| `--glass-blur` | `saturate(190%) blur(24px)` |
+| `--glass-sheen` | brilho especular: degradê branco a 160° do topo para o meio |
+| `--glass-highlight` | borda de luz: `inset 0 1px 0` branco 95% + contorno interno branco 25% |
+| `--glass-border` | `rgb(255 255 255 / .75)` |
+| `.glass-tint` | vidro tingido com o azul da marca (botão principal), branco ≥ 4,9:1 |
+| `--app-backdrop` | névoa azul da marca, fixa atrás do app (o que o vidro deixa entrever) |
+| `--overlay-scrim` | `rgb(6 30 60 / .28)` |
+
+Controles em **cápsula** (botões, abas, segmentado, barra inferior), raios de 8 a 28 px.
+`prefers-contrast: more` também troca o vidro por superfície sólida com contorno.
 
 Regras do vidro:
 1. **Onde usar:** barra lateral, barra inferior mobile, cabeçalho fixo ao rolar, menus/popovers, paleta de comandos, painel lateral da agenda, indicador do item selecionado, barra de ações flutuante.

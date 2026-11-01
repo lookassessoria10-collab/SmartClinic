@@ -41,7 +41,7 @@ export function ConfirmDialog({
               cancelRef.current?.focus();
             }
           }}
-          className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-surface p-6 shadow-lg outline-none animate-[toast-in_var(--duration-base)_var(--ease-standard)]"
+          className="glass-strong fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border p-6 outline-none animate-[pop-in_var(--duration-base)_var(--ease-spring)]"
         >
           <Dialog.Title className="text-title-2 font-semibold">{title}</Dialog.Title>
           {description ? (

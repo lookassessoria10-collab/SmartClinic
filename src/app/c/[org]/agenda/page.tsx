@@ -41,7 +41,7 @@ function Agenda() {
             title="Nenhum profissional cadastrado"
             description="A agenda é organizada por profissional. Cadastre quem atende, os serviços e os horários de atendimento."
             action={
-              <Link href={`/c/${org}/gestao/profissionais`} className="inline-flex h-11 items-center rounded-sm bg-accent px-4 text-body-sm font-medium text-on-accent hover:bg-accent-hover">
+              <Link href={`/c/${org}/gestao/profissionais`} className="inline-flex h-11 items-center glass-tint rounded-full px-4 text-body-sm font-medium hover:brightness-[1.06]">
                 Cadastrar profissional
               </Link>
             }

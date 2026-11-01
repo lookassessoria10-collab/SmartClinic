@@ -36,7 +36,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         aria-live="polite"
         aria-atomic="false"
-        className="pointer-events-none fixed inset-x-0 bottom-20 z-[60] flex flex-col items-center gap-2 px-4 md:bottom-6"
+        className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4 md:bottom-6"
       >
         {items.map((t) => (
           <ToastView key={t.id} item={t} onDismiss={() => dismiss(t.id)} />
@@ -57,13 +57,13 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
   return (
     <div
       role="status"
-      className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-md bg-ink px-4 py-3 text-body-sm text-white shadow-lg animate-[toast-in_var(--duration-base)_var(--ease-standard)]"
+      className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-[22px] border border-white/15 bg-[rgb(15_27_45/0.86)] px-4 py-3 text-body-sm text-white shadow-lg backdrop-blur-xl backdrop-saturate-150 animate-[toast-in_var(--duration-base)_var(--ease-spring)]"
     >
       <Icon className={cn("size-5 shrink-0", item.tone === "danger" ? "text-danger-subtle" : "text-accent-subtle")} aria-hidden />
       <span className="flex-1">{item.message}</span>
       {item.action && (
         <button
-          className="rounded-xs px-2 py-1 font-semibold text-accent-subtle underline-offset-2 hover:underline"
+          className="rounded-full px-3 py-1 font-semibold text-accent-subtle underline-offset-2 hover:bg-white/10 hover:underline"
           onClick={() => {
             item.action!.onClick();
             onDismiss();

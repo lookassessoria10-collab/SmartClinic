@@ -1,22 +1,29 @@
 /*
  * Design tokens — fonte única de verdade (docs/06-design-system.md).
  * Componentes usam somente estes tokens, via utilitários Tailwind mapeados em globals.css.
+ * Marca smartclin (D-01, 2026-11-01): azul da logo #0e6bb8; estética inspirada no Liquid Glass.
  */
 :root {
-  /* Neutros */
-  --color-bg: #ffffff;
-  --color-bg-subtle: #f6f7f9;
-  --color-bg-muted: #eef0f3;
-  --color-border: #e3e6ea;
-  --color-border-strong: #c9ced6;
-  --color-text: #14171c;
-  --color-text-secondary: #4d5562;
-  --color-text-tertiary: #6b7280;
+  /* Marca */
+  --brand-navy: #062f5e;
+  --brand-blue: #0e6bb8;
+  --brand-sky: #8ccbf2;
+  --brand-mist: #eaf3fc;
 
-  /* Destaque */
-  --color-accent: #1f6f8b;
-  --color-accent-hover: #185a72;
-  --color-accent-subtle: #e6f1f5;
+  /* Neutros (levemente azulados, para conversar com a marca) */
+  --color-bg: #ffffff;
+  --color-bg-subtle: #f3f7fc;
+  --color-bg-muted: #e8eff8;
+  --color-border: #dfe7f1;
+  --color-border-strong: #bccad9;
+  --color-text: #0f1b2d;
+  --color-text-secondary: #455469;
+  --color-text-tertiary: #5c6b80;
+
+  /* Destaque = azul smartclin */
+  --color-accent: #0e6bb8;
+  --color-accent-hover: #0a5797;
+  --color-accent-subtle: #e4f0fb;
   --color-on-accent: #ffffff;
 
   /* Status */
@@ -30,7 +37,7 @@
   --color-info-subtle: #e8eefa;
 
   /* Cores de profissional na agenda: faixa (forte) + fundo (suave) */
-  --agenda-1: #1f6f8b; --agenda-1-bg: #e6f1f5;
+  --agenda-1: #0e6bb8; --agenda-1-bg: #e4f0fb;
   --agenda-2: #7a4fb5; --agenda-2-bg: #f1ebfa;
   --agenda-3: #a34a24; --agenda-3-bg: #fbeee7;
   --agenda-4: #286f46; --agenda-4-bg: #e8f4ec;
@@ -39,26 +46,40 @@
   --agenda-7: #7a6000; --agenda-7-bg: #faf3d9;
   --agenda-8: #4b5563; --agenda-8-bg: #eef0f3;
 
-  /* Sombras */
-  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.05);
-  --shadow-sm: 0 1px 3px rgb(16 24 40 / 0.06), 0 1px 2px rgb(16 24 40 / 0.04);
-  --shadow-md: 0 4px 12px rgb(16 24 40 / 0.08), 0 2px 4px rgb(16 24 40 / 0.04);
-  --shadow-lg: 0 12px 32px rgb(16 24 40 / 0.12), 0 4px 8px rgb(16 24 40 / 0.05);
-  --shadow-focus: 0 0 0 3px rgb(31 111 139 / 0.35);
+  /* Sombras: difusas e azuladas, como objetos flutuando sobre o fundo */
+  --shadow-xs: 0 1px 2px rgb(6 47 94 / 0.06);
+  --shadow-sm: 0 2px 8px rgb(6 47 94 / 0.06), 0 1px 2px rgb(6 47 94 / 0.04);
+  --shadow-md: 0 8px 24px rgb(6 47 94 / 0.08), 0 2px 6px rgb(6 47 94 / 0.04);
+  --shadow-lg: 0 18px 48px rgb(6 47 94 / 0.14), 0 4px 12px rgb(6 47 94 / 0.06);
+  --shadow-focus: 0 0 0 4px rgb(14 107 184 / 0.28);
 
-  /* Vidro */
-  --glass-bg: rgb(255 255 255 / 0.72);
-  --glass-bg-strong: rgb(255 255 255 / 0.86);
-  --glass-blur: saturate(180%) blur(20px);
-  --glass-border: rgb(255 255 255 / 0.6);
-  --glass-highlight: inset 0 1px 0 rgb(31 111 139 / 0.08);
-  --overlay-scrim: rgb(20 23 28 / 0.32);
+  /*
+   * Vidro (navegação, menus, painéis, controles — D-13). Três camadas, como no Liquid Glass:
+   * tinta translúcida + desfoque do que está atrás, brilho especular na borda de cima e uma
+   * linha clara de contorno que separa o vidro do fundo.
+   */
+  --glass-bg: rgb(255 255 255 / 0.58);
+  --glass-bg-strong: rgb(255 255 255 / 0.8);
+  --glass-blur: saturate(190%) blur(24px);
+  --glass-border: rgb(255 255 255 / 0.75);
+  --glass-sheen: linear-gradient(160deg, rgb(255 255 255 / 0.65) 0%, rgb(255 255 255 / 0.12) 38%, rgb(255 255 255 / 0) 60%);
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.95), inset 0 -1px 0 rgb(255 255 255 / 0.35), inset 0 0 0 1px rgb(255 255 255 / 0.25);
+  --glass-shadow: 0 10px 34px rgb(6 47 94 / 0.12), 0 2px 6px rgb(6 47 94 / 0.06);
+  --overlay-scrim: rgb(6 30 60 / 0.28);
+
+  /* Fundo do app: névoa azul da marca, clara para o conteúdo continuar legível */
+  --app-backdrop:
+    radial-gradient(1100px 700px at 8% -10%, rgb(140 203 242 / 0.7), transparent 60%),
+    radial-gradient(900px 650px at 105% 15%, rgb(14 107 184 / 0.22), transparent 62%),
+    radial-gradient(800px 600px at 60% 115%, rgb(140 203 242 / 0.55), transparent 60%),
+    #eef4fb;
 
   /* Movimento */
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 320ms;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
 
   /* Agenda */
@@ -70,5 +91,6 @@
     --duration-fast: 0ms;
     --duration-base: 80ms;
     --duration-slow: 80ms;
+    --ease-spring: var(--ease-standard);
   }
 }

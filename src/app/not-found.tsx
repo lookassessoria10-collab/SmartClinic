@@ -12,7 +12,7 @@ export default function NotFound() {
         </span>
         <h1 className="text-title-1 font-semibold">Página não encontrada</h1>
         <p className="mt-2 text-body-sm text-ink-2">O endereço pode estar errado, ou você não tem acesso a esta clínica.</p>
-        <Link href="/login" className="mt-6 inline-flex h-10 items-center rounded-sm bg-accent px-4 text-body-sm font-medium text-on-accent hover:bg-accent-hover">
+        <Link href="/login" className="mt-6 inline-flex h-10 items-center glass-tint rounded-full px-4 text-body-sm font-medium hover:brightness-[1.06]">
           Ir para o início
         </Link>
       </div>

@@ -19,7 +19,7 @@ export function StatusBadge({ status, className }: { status: AppointmentStatus; 
   return (
     <span
       className={cn(
-        "inline-flex h-6 items-center gap-1 rounded-xs px-2 text-caption font-medium whitespace-nowrap",
+        "inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-caption font-medium whitespace-nowrap",
         meta.className,
         className,
       )}
@@ -32,7 +32,7 @@ export function StatusBadge({ status, className }: { status: AppointmentStatus; 
 
 export function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={cn("inline-flex h-6 items-center gap-1 rounded-xs bg-muted px-2 text-caption font-medium text-ink-2", className)}>
+    <span className={cn("inline-flex h-6 items-center gap-1 rounded-full bg-muted px-2.5 text-caption font-medium text-ink-2", className)}>
       {children}
     </span>
   );

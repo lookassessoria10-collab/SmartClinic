@@ -5,17 +5,19 @@ import { cn } from "@/lib/cn";
 type Variant = "primary" | "secondary" | "ghost" | "destructive";
 type Size = "sm" | "md" | "lg" | "icon";
 
+// Cápsulas, como os controles do Liquid Glass: principal em vidro tingido com o azul da marca,
+// secundário em vidro claro, fantasma só ganha vidro ao passar o mouse.
 const variants: Record<Variant, string> = {
-  primary: "bg-accent text-on-accent hover:bg-accent-hover shadow-xs",
-  secondary: "bg-surface text-ink border border-line-strong hover:bg-muted shadow-xs",
-  ghost: "text-ink-2 hover:bg-muted hover:text-ink",
-  destructive: "bg-danger text-white hover:brightness-95 shadow-xs",
+  primary: "glass-tint hover:brightness-[1.06]",
+  secondary: "glass border text-ink hover:bg-white/80",
+  ghost: "text-ink-2 hover:bg-white/70 hover:text-ink",
+  destructive: "bg-danger text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.3),0_4px_12px_rgb(180_35_53/0.25)] hover:brightness-95",
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3 text-body-sm gap-1.5",
-  md: "h-10 px-4 text-body-sm gap-2",
-  lg: "h-12 px-5 text-body gap-2",
+  sm: "h-9 px-3.5 text-body-sm gap-1.5",
+  md: "h-10 px-4.5 text-body-sm gap-2",
+  lg: "h-12 px-6 text-body gap-2",
   icon: "h-10 w-10 justify-center",
 };
 
@@ -36,9 +38,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        "inline-flex select-none items-center justify-center rounded-sm font-medium whitespace-nowrap",
-        "transition-[background-color,color,box-shadow,filter] duration-(--duration-fast) ease-standard",
-        "disabled:cursor-not-allowed disabled:opacity-50 active:scale-[.98] motion-reduce:active:scale-100",
+        "inline-flex select-none items-center justify-center rounded-full font-medium whitespace-nowrap",
+        "transition-[background-color,color,box-shadow,filter,transform] duration-(--duration-fast) ease-(--ease-spring)",
+        "disabled:cursor-not-allowed disabled:opacity-50 active:scale-[.97] motion-reduce:active:scale-100",
         variants[variant],
         sizes[size],
         className,

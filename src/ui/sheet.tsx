@@ -30,8 +30,8 @@ export function Sheet({ open, onOpenChange, title, description, children, footer
         <Dialog.Content
           className={cn(
             "glass-strong fixed z-40 flex flex-col border outline-none",
-            "inset-x-0 bottom-0 max-h-[92dvh] rounded-t-xl animate-[slide-in-up_var(--duration-slow)_var(--ease-standard)]",
-            "md:inset-y-3 md:right-3 md:left-auto md:max-h-none md:w-[420px] md:rounded-lg md:animate-[slide-in-right_var(--duration-slow)_var(--ease-standard)]",
+            "inset-x-0 bottom-0 max-h-[92dvh] rounded-t-[28px] animate-[slide-in-up_var(--duration-slow)_var(--ease-standard)]",
+            "md:inset-y-3 md:right-3 md:left-auto md:max-h-none md:w-[440px] md:rounded-[28px] md:animate-[slide-in-right_var(--duration-slow)_var(--ease-standard)]",
           )}
           onInteractOutside={(e) => {
             if (!modal) e.preventDefault();
@@ -47,11 +47,11 @@ export function Sheet({ open, onOpenChange, title, description, children, footer
                 <Dialog.Description className="sr-only">{title}</Dialog.Description>
               )}
             </div>
-            <Dialog.Close className="-mr-2 grid size-10 place-items-center rounded-full text-ink-2 hover:bg-muted" aria-label="Fechar">
+            <Dialog.Close className="glass -mr-1 grid size-10 place-items-center rounded-full border text-ink-2 hover:text-ink" aria-label="Fechar">
               <X className="size-5" aria-hidden />
             </Dialog.Close>
           </header>
-          <div className="mx-3 flex-1 overflow-y-auto rounded-md bg-surface p-4 shadow-xs">{children}</div>
+          <div className="mx-3 mb-3 flex-1 overflow-y-auto rounded-[20px] bg-surface p-4 shadow-xs">{children}</div>
           {footer && <footer className="flex flex-wrap justify-end gap-2 px-5 py-4">{footer}</footer>}
         </Dialog.Content>
       </Dialog.Portal>

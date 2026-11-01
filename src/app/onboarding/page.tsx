@@ -9,6 +9,7 @@ import { checkSlug, createClinic } from "@/modules/organizations/actions";
 import { slugify } from "@/modules/organizations/schemas";
 import type { Need, Segment } from "@/prototype/types";
 import { Button } from "@/ui/button";
+import { Wordmark } from "@/ui/brand";
 import { Field, Input } from "@/ui/field";
 import { cn } from "@/lib/cn";
 
@@ -119,7 +120,7 @@ export default function OnboardingPage() {
   ];
 
   return (
-    <main className="min-h-dvh bg-[radial-gradient(900px_500px_at_50%_-20%,var(--color-accent-subtle),transparent_70%)] px-4 py-8 sm:py-14">
+    <main className="min-h-dvh px-4 py-8 sm:py-14">
       <div className="mx-auto w-full max-w-2xl">
         <div className="mb-6 flex items-center justify-between">
           {step > 0 ? (
@@ -127,7 +128,7 @@ export default function OnboardingPage() {
               <ArrowLeft className="size-4" aria-hidden /> Voltar
             </Button>
           ) : (
-            <span />
+            <Wordmark className="text-title-2 leading-none text-accent" />
           )}
           {step < 4 && <span className="text-body-sm text-ink-2">Passo {step + 1} de 4</span>}
         </div>

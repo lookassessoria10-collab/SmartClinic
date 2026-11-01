@@ -42,10 +42,10 @@ Marque cada uma com ✅ (aprovado como proposto), ✏️ (aprovado com ajuste) o
 
 | # | Tema | Proposta | Precisa antes da |
 |---|------|----------|-----------------|
-| **D-01** | Nome do produto | Usar nome provisório no protótipo; nome definitivo + busca no INPI antes da Fase 10 | Fase 2 (provisório) |
+| **D-01** | Nome do produto | ✅ **smartclin** (definido em 2026-11-01). Antes do lançamento comercial: busca no INPI (classes 9, 42, 44) e registro do domínio | Fase 10 (registro) |
 | **D-02** | Escopo do MVP | Conforme [01-visao-e-escopo.md §4](01-visao-e-escopo.md) | Fase 2 |
 | **D-03** | Telas do protótipo | Login, onboarding, Início (3 perfis), agenda, página pública, fila de aprovação — dados fictícios, sem backend | Fase 2 |
-| **D-04** | Identidade visual | Azul-petróleo `#1F6F8B` como destaque, Inter, Lucide, só tema claro no MVP | Fase 2 |
+| **D-04** | Identidade visual | ✏️ Revista em 2026-11-01: azul smartclin `#0E6BB8` (marinho `#062F5E`, céu `#8CCBF2`), Poppins (marca e títulos) + Inter (corpo), Lucide, só tema claro no MVP | Fase 2 |
 | **D-05** | Papel × profissional | Separar nível de acesso de "ser profissional" (gestor pode atender) | Fase 3 |
 | **D-06** | Visibilidade padrão | Profissional: vê ocupação de todos, detalhes só dos próprios pacientes. Recepção: lança recebimentos, não vê resumo financeiro | Fase 3 |
 | **D-07** | Canal de status ao paciente | Link com token na tela de confirmação + e-mail transacional (plano gratuito, exige domínio) | Fase 6 |
@@ -54,7 +54,7 @@ Marque cada uma com ✅ (aprovado como proposto), ✏️ (aprovado com ajuste) o
 | **D-10** | Hospedagem comercial | Supabase Pro (região São Paulo) + Vercel Pro ou alternativa; contratar só após sua autorização | Fase 10 |
 | **D-11** | Classificação dos dados | Tratar agenda e pacientes como dados sensíveis de saúde desde a Fase 3 | Fase 3 |
 | **D-12** | Acesso do admin da plataforma | Sem acesso a pacientes; suporte com acesso só mediante autorização temporária (pós-MVP) | Fase 9 |
-| **D-13** | Uso do efeito glass | Restrito às áreas da [06-design-system.md §2](06-design-system.md), com fallback opaco | Fase 2 |
+| **D-13** | Uso do efeito glass | ✏️ Ampliado em 2026-11-01 para a estética Liquid Glass (brilho especular, cápsulas, fundo da marca), **ainda só na camada de navegação e controles**; conteúdo opaco; fallback opaco para menos transparência, mais contraste e alto contraste ([06 §2](06-design-system.md)) | Fase 2 |
 | **D-14** | Suspensão e retenção | Suspensa = somente leitura + exportação; cancelada = 90 dias + aviso de 30 dias antes da exclusão (validar com jurídico) | Fase 9 |
 
 ### Decisões para a Fase 3 (ver [12-fase-3-plano.md](12-fase-3-plano.md))
