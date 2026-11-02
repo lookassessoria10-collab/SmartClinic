@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { format, startOfDay } from "date-fns";
-import { AlertTriangle, CalendarClock, History, Phone, StickyNote } from "lucide-react";
+import { AlertTriangle, CalendarClock, History, Phone, Repeat, StickyNote } from "lucide-react";
 import { freeSlots } from "@/modules/availability/rules";
 import { PatientPicker } from "@/modules/patients/components/patient-picker";
 import { select } from "@/modules/clinic/client";
 import { createAppointment, rescheduleAppointment, setAppointmentStatus } from "@/modules/scheduling/actions";
+import { bookWaitingEntry } from "@/modules/opportunities/actions";
 import type { Db, Patient } from "@/prototype/types";
 import { Sheet } from "@/ui/sheet";
 import { Button } from "@/ui/button";
@@ -19,8 +20,18 @@ import { useToast } from "@/ui/toast";
 import { cap, dayLabel, fmt, phone, time } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
+/** Dados que chegam preenchidos (ex.: a partir de uma oportunidade ou da lista de espera). */
+export interface CreatePrefill {
+  professionalId: string;
+  start: Date;
+  serviceId?: string;
+  patientId?: string;
+  opportunityId?: string;
+  waitingEntryId?: string;
+}
+
 export type SheetState =
-  | { mode: "create"; professionalId: string; start: Date }
+  | ({ mode: "create" } & CreatePrefill)
   | { mode: "view"; id: string }
   | null;
 
@@ -66,14 +77,18 @@ function suggestions(db: Db, professionalId: string, serviceId: string, around: 
   return out;
 }
 
-function CreateForm({ db, initial, onDone }: { db: Db; initial: { professionalId: string; start: Date }; onDone: (id: string) => void }) {
+function CreateForm({ db, initial, onDone }: { db: Db; initial: CreatePrefill; onDone: (id: string) => void }) {
   const { org } = useParams<{ org: string }>();
   const toast = useToast();
   const [saving, startSaving] = useTransition();
-  const [patient, setPatient] = useState<Patient | null>(null);
+  // Da lista de espera o paciente vem fixo: o pedido é dele.
+  const waiting = initial.waitingEntryId ? db.waitingList.find((w) => w.id === initial.waitingEntryId) : undefined;
+  const [patient, setPatient] = useState<Patient | null>(() => select.patient(db, initial.patientId ?? waiting?.patientId ?? null) ?? null);
   const [professionalId, setProfessionalId] = useState(initial.professionalId);
   const servicesFor = db.services.filter((s) => s.active && s.professionalIds.includes(professionalId));
-  const [serviceId, setServiceId] = useState(servicesFor[0]?.id ?? "");
+  const [serviceId, setServiceId] = useState(
+    servicesFor.find((s) => s.id === (initial.serviceId ?? waiting?.serviceId))?.id ?? servicesFor[0]?.id ?? "",
+  );
   const [day, setDay] = useState(startOfDay(initial.start));
   const [start, setStart] = useState<number>(+initial.start);
   const [notes, setNotes] = useState("");
@@ -88,9 +103,12 @@ function CreateForm({ db, initial, onDone }: { db: Db; initial: { professionalId
     setTouched(true);
     if (!patient || !svc.id || !startValid) return;
     startSaving(async () => {
-      const res = await createAppointment(org, {
-        professionalId, serviceId, patientId: patient.id, startsAt: new Date(start).toISOString(), notes: notes || undefined,
-      });
+      const startsAt = new Date(start).toISOString();
+      const res = waiting && waiting.patientId === patient.id
+        ? await bookWaitingEntry(org, { entryId: waiting.id, professionalId, serviceId, startsAt, opportunityId: initial.opportunityId })
+        : await createAppointment(org, {
+            professionalId, serviceId, patientId: patient.id, startsAt, notes: notes || undefined, opportunityId: initial.opportunityId,
+          });
       if (!res.ok || !res.data) {
         return setError({ message: res.message ?? "Não foi possível agendar.", suggestions: suggestions(db, professionalId, serviceId, new Date(start)) });
       }
@@ -324,6 +342,16 @@ function Details({ db, id, onClose }: { db: Db; id: string; onClose: () => void 
             </Button>
           </div>
         </div>
+      )}
+
+      {/* Retorno só quando alguém registra (docs/17 §5 C): nada é inferido do histórico. */}
+      {patient && (a.status === "completed" || a.status === "confirmed") && (
+        <Link
+          href={`/c/${org}/inicio/oportunidades/retornos?novo=1&paciente=${patient.id}&profissional=${a.professionalId}&servico=${a.serviceId}&origem=${a.id}`}
+          className="inline-flex h-10 items-center gap-2 self-start rounded-full px-3 text-body-sm font-medium text-accent hover:bg-accent-subtle"
+        >
+          <Repeat className="size-4" aria-hidden /> Registrar retorno
+        </Link>
       )}
 
       {history.length > 0 && (

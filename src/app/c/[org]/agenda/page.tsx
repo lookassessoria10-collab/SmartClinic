@@ -9,7 +9,7 @@ import { freeSlots } from "@/modules/availability/rules";
 import { TimeGrid, type GridColumn } from "@/modules/scheduling/components/time-grid";
 import { MonthView } from "@/modules/scheduling/components/month-view";
 import { DayList } from "@/modules/scheduling/components/day-list";
-import { AppointmentSheet, type SheetState } from "@/modules/scheduling/components/appointment-sheet";
+import { AppointmentSheet, type CreatePrefill, type SheetState } from "@/modules/scheduling/components/appointment-sheet";
 import { select, useDb } from "@/modules/clinic/client";
 import type { Db } from "@/prototype/types";
 import { Button } from "@/ui/button";
@@ -61,8 +61,9 @@ function AgendaInner({ db }: { db: Db }) {
   const ownId = db.viewer.role === "professional" ? db.viewer.professionalId : null;
   const active = useMemo(() => select.activeProfessionals(db), [db]);
 
-  // ?novo=1 → abre o painel no próximo horário livre (ação rápida do Início).
-  const [initialNew] = useState(() => (params.get("novo") === "1" && (ownId ?? active[0]?.id) ? nextFree(db, (ownId ?? active[0]?.id)!) : null));
+  // ?novo=1 → abre o painel no próximo horário livre (ação rápida do Início). Vindo de Oportunidades,
+  // chega com profissional, horário, serviço, paciente, oportunidade e pedido da lista de espera.
+  const [initialNew] = useState(() => (params.get("novo") === "1" ? prefill(params, db, ownId ?? active[0]?.id) : null));
   const [view, setView] = useState<View>("week");
   const [anchor, setAnchor] = useState(() => startOfDay(initialNew?.start ?? new Date()));
   // O filtro vale para o perfil que o escolheu; ao trocar de perfil, o profissional abre na própria agenda.
@@ -211,6 +212,23 @@ function AgendaInner({ db }: { db: Db }) {
       <AppointmentSheet db={db} state={sheet} onClose={() => setSheet(null)} />
     </>
   );
+}
+
+/** Painel de criação a partir da URL. Só ids que a pessoa enxerga são usados; o banco confere de novo. */
+function prefill(params: { get(name: string): string | null }, db: Db, fallbackPro?: string): CreatePrefill | null {
+  const known = <T extends { id: string }>(list: T[], id: string | null) => (id && list.some((x) => x.id === id) ? id : undefined);
+  const extra = {
+    serviceId: known(db.services, params.get("servico")),
+    patientId: known(db.patients, params.get("paciente")),
+    opportunityId: params.get("oportunidade") ?? undefined,
+    waitingEntryId: known(db.waitingList, params.get("espera")),
+  };
+  const pro = known(select.activeProfessionals(db), params.get("profissional"));
+  const start = new Date(params.get("inicio") ?? "");
+  if (pro && !Number.isNaN(+start) && start > new Date()) return { professionalId: pro, start, ...extra };
+  const id = pro ?? fallbackPro;
+  const next = id ? nextFree(db, id) : null;
+  return next ? { ...next, ...extra } : null;
 }
 
 function nextFree(db: Db, professionalId: string) {

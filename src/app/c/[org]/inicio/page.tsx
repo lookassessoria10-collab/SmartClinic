@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { select, useDb } from "@/modules/clinic/client";
 import { setAppointmentStatus } from "@/modules/scheduling/actions";
+import { OpportunitiesHomeCard } from "@/modules/opportunities/components/home-card";
 import type { Appointment, Db } from "@/prototype/types";
 import { Avatar, Card, CardHeader, EmptyState, PageHeader } from "@/ui/primitives";
 import { StatusBadge } from "@/ui/status-badge";
@@ -55,6 +56,7 @@ function ReceptionHome({ db }: { db: Db }) {
       </div>
       <div className="flex flex-col gap-4">
         <QuickActions />
+        <OpportunitiesHomeCard db={db} />
         <NextUp db={db} />
       </div>
     </div>
@@ -96,6 +98,7 @@ function ProfessionalHome({ db }: { db: Db }) {
           </ul>
         </Card>
         <PendingCard db={db} compact />
+        <OpportunitiesHomeCard db={db} />
       </div>
     </div>
   );
@@ -136,6 +139,7 @@ function ManagerHome({ db }: { db: Db }) {
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex flex-col gap-4">
           <TodayCard db={db} title="Agenda de hoje" actionable />
+          <OpportunitiesHomeCard db={db} />
         </div>
         <div className="flex flex-col gap-4">
           <Card>

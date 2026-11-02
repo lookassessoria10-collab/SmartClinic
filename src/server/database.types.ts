@@ -273,6 +273,76 @@ isOneToOne: false
                   Relationships: [
 
                   ]
+                },"waiting_list": {
+                  Row: {
+                    "appointment_id": string | null,"closed_at": string | null,"created_at": string,"created_by": string | null,"earliest_date": string | null,"id": string,"latest_date": string | null,"notes": string | null,"organization_id": string,"patient_id": string,"periods": string[] | null,"professional_id": string | null,"service_id": string | null,"status": Database["public"]['Enums']["waiting_status"],"updated_at": string,"weekdays": number[] | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "earliest_date"?: string | null,"latest_date"?: string | null,"notes"?: string | null,"organization_id": string,"patient_id": string,"periods"?: string[] | null,"professional_id"?: string | null,"service_id"?: string | null,"weekdays"?: number[] | null
+                  }
+                  Update: {
+                    "earliest_date"?: string | null,"latest_date"?: string | null,"notes"?: string | null,"periods"?: string[] | null,"professional_id"?: string | null,"service_id"?: string | null,"status"?: Database["public"]['Enums']["waiting_status"],"weekdays"?: number[] | null
+                  }
+                  Relationships: [
+
+                  ]
+                },"follow_ups": {
+                  Row: {
+                    "appointment_id": string | null,"closed_at": string | null,"created_at": string,"created_by": string | null,"due_date": string,"id": string,"organization_id": string,"patient_id": string,"professional_id": string,"service_id": string | null,"source_appointment_id": string | null,"status": Database["public"]['Enums']["follow_up_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "due_date": string,"organization_id": string,"patient_id": string,"professional_id": string,"service_id"?: string | null,"source_appointment_id"?: string | null
+                  }
+                  Update: {
+                    "due_date"?: string,"service_id"?: string | null,"status"?: Database["public"]['Enums']["follow_up_status"]
+                  }
+                  Relationships: [
+
+                  ]
+                },"proposals": {
+                  Row: {
+                    "closed_at": string | null,"created_at": string,"created_by": string | null,"id": string,"last_activity_at": string,"organization_id": string,"patient_id": string,"professional_id": string | null,"status": Database["public"]['Enums']["proposal_status"],"title": string,"total_cents": number,"updated_at": string,"valid_until": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    [_ in never]: never
+                  }
+                  Update: {
+                    [_ in never]: never
+                  }
+                  Relationships: [
+
+                  ]
+                },"proposal_items": {
+                  Row: {
+                    "description": string,"id": string,"organization_id": string,"position": number,"proposal_id": string,"quantity": number,"service_id": string | null,"unit_price_cents": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    [_ in never]: never
+                  }
+                  Update: {
+                    [_ in never]: never
+                  }
+                  Relationships: [
+
+                  ]
+                },"opportunity_settings": {
+                  Row: {
+                    "enabled_kinds": Database["public"]['Enums']["opportunity_kind"][],"excluded_professional_ids": string[],"follow_up_lead_days": number,"last_refreshed_at": string | null,"organization_id": string,"priority_overrides": Json,"professionals_see_own": boolean,"proposal_stale_days": number,"reception_sees_values": boolean,"slot_horizon_days": number,"stale": boolean,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    [_ in never]: never
+                  }
+                  Update: {
+                    [_ in never]: never
+                  }
+                  Relationships: [
+
+                  ]
                 }
           }
           Views: {
@@ -338,10 +408,40 @@ isOneToOne: false
                            },
 "login_throttled":
 { Args: { "p_email": string,"p_ip_hash": string }; Returns: boolean
+                           },
+"save_proposal":
+{ Args: { "p_id"?: string,"p_items": Json,"p_org": string,"p_patient": string,"p_professional"?: string,"p_title": string,"p_valid_until"?: string }; Returns: string
+                           },
+"set_proposal_status":
+{ Args: { "p_id": string,"p_status": Database["public"]['Enums']["proposal_status"] }; Returns: undefined
+                           },
+"opportunities_feed":
+{ Args: { "p_category"?: string,"p_days"?: number,"p_force"?: boolean,"p_limit"?: number,"p_offset"?: number,"p_org": string,"p_professional"?: string,"p_sort"?: string,"p_view"?: string }; Returns: Json
+                           },
+"opportunity_detail":
+{ Args: { "p_id": string }; Returns: Json
+                           },
+"opportunity_set_status":
+{ Args: { "p_id": string,"p_reason"?: string,"p_status": Database["public"]['Enums']["opportunity_status"] }; Returns: undefined
+                           },
+"opportunity_log_contact":
+{ Args: { "p_id": string,"p_note"?: string,"p_outcome": string }; Returns: undefined
+                           },
+"opportunity_assign":
+{ Args: { "p_id": string,"p_user"?: string }; Returns: undefined
+                           },
+"opportunity_record_booking":
+{ Args: { "p_appointment": string,"p_id": string }; Returns: boolean
+                           },
+"book_from_waiting_list":
+{ Args: { "p_entry": string,"p_opportunity"?: string,"p_professional": string,"p_service"?: string,"p_starts_at": string }; Returns: string
+                           },
+"save_opportunity_settings":
+{ Args: { "p_enabled": Database["public"]['Enums']["opportunity_kind"][],"p_excluded": string[],"p_horizon_days": number,"p_lead_days": number,"p_org": string,"p_priorities": Json,"p_professionals_see_own": boolean,"p_reception_sees_values": boolean,"p_stale_days": number }; Returns: undefined
                            }
           }
           Enums: {
-            "appointment_origin": "staff"|"public"|"import"|"integration","appointment_status": "requested"|"confirmed"|"declined"|"expired"|"cancelled"|"no_show"|"completed","block_kind": "break"|"time_off"|"vacation"|"holiday"|"other","member_role": "manager"|"reception"|"professional","member_status": "invited"|"active"|"disabled","org_segment": "medical_clinic"|"medical_office"|"dental_clinic"|"dental_office"|"aesthetic_clinic"|"aesthetic_office"|"multidisciplinary"|"other","org_status": "trial"|"active"|"suspended"|"cancelled"
+            "appointment_origin": "staff"|"public"|"import"|"integration","appointment_status": "requested"|"confirmed"|"declined"|"expired"|"cancelled"|"no_show"|"completed","block_kind": "break"|"time_off"|"vacation"|"holiday"|"other","member_role": "manager"|"reception"|"professional","member_status": "invited"|"active"|"disabled","org_segment": "medical_clinic"|"medical_office"|"dental_clinic"|"dental_office"|"aesthetic_clinic"|"aesthetic_office"|"multidisciplinary"|"other","org_status": "trial"|"active"|"suspended"|"cancelled","waiting_status": "waiting"|"booked"|"removed","follow_up_status": "pending"|"scheduled"|"done"|"cancelled","proposal_status": "open"|"accepted"|"declined"|"cancelled"|"expired","opportunity_kind": "free_slots"|"cancelled_slot"|"follow_up_due"|"proposal_stale"|"no_show"|"cancelled_appointment","opportunity_status": "new"|"in_progress"|"resolved"|"dismissed"|"expired"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -457,7 +557,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "appointment_origin": ["staff", "public", "import", "integration"],"appointment_status": ["requested", "confirmed", "declined", "expired", "cancelled", "no_show", "completed"],"block_kind": ["break", "time_off", "vacation", "holiday", "other"],"member_role": ["manager", "reception", "professional"],"member_status": ["invited", "active", "disabled"],"org_segment": ["medical_clinic", "medical_office", "dental_clinic", "dental_office", "aesthetic_clinic", "aesthetic_office", "multidisciplinary", "other"],"org_status": ["trial", "active", "suspended", "cancelled"]
+            "appointment_origin": ["staff", "public", "import", "integration"],"appointment_status": ["requested", "confirmed", "declined", "expired", "cancelled", "no_show", "completed"],"block_kind": ["break", "time_off", "vacation", "holiday", "other"],"member_role": ["manager", "reception", "professional"],"member_status": ["invited", "active", "disabled"],"org_segment": ["medical_clinic", "medical_office", "dental_clinic", "dental_office", "aesthetic_clinic", "aesthetic_office", "multidisciplinary", "other"],"org_status": ["trial", "active", "suspended", "cancelled"],"waiting_status": ["waiting", "booked", "removed"],"follow_up_status": ["pending", "scheduled", "done", "cancelled"],"proposal_status": ["open", "accepted", "declined", "cancelled", "expired"],"opportunity_kind": ["free_slots", "cancelled_slot", "follow_up_due", "proposal_stale", "no_show", "cancelled_appointment"],"opportunity_status": ["new", "in_progress", "resolved", "dismissed", "expired"]
           }
         }
 } as const

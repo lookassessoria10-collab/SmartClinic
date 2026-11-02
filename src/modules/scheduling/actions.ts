@@ -20,6 +20,8 @@ const createSchema = z.object({
   patientId: uuid,
   startsAt: z.iso.datetime({ offset: true }),
   notes: z.string().trim().max(2000).optional(),
+  /** Agendado a partir de uma oportunidade (docs/17): o histórico dela registra quem agendou. */
+  opportunityId: uuid.optional(),
 });
 
 export async function createAppointment(slug: string, input: z.input<typeof createSchema>): Promise<Result<{ id: string }>> {
@@ -37,6 +39,11 @@ export async function createAppointment(slug: string, input: z.input<typeof crea
     p_notes: v.notes || undefined,
   });
   if (error) return { ok: false, message: dbErrorMessage(error) };
+  if (v.opportunityId) {
+    // O agendamento já existe; se a ligação falhar, a próxima atualização resolve a oportunidade sozinha.
+    const link = await supabase.rpc("opportunity_record_booking", { p_id: v.opportunityId, p_appointment: data });
+    if (link.error) console.error("[oportunidades] registrar agendamento", link.error.code, link.error.message);
+  }
   refresh(slug);
   return { ok: true, data: { id: data } };
 }

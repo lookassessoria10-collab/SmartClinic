@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState, useTransition } from "react";
-import { History, Pencil, Search, Trash2, Upload, UserPlus, Users } from "lucide-react";
+import { History, ListPlus, Pencil, Receipt, Repeat, Search, Trash2, Upload, UserPlus, Users } from "lucide-react";
 import { select, useDb } from "@/modules/clinic/client";
 import { deletePatient, savePatient } from "@/modules/patients/actions";
 import { can, useSession } from "@/components/session-context";
@@ -36,12 +37,17 @@ function Patients() {
   const router = useRouter();
   const { org } = useParams<{ org: string }>();
   const [q, setQ] = useState("");
-  const [editing, setEditing] = useState<Editing>(() => (params.get("novo") === "1" ? { mode: "new" } : null));
+  const [editing, setEditing] = useState<Editing>(() => {
+    if (params.get("novo") === "1") return { mode: "new" };
+    // ?id=<paciente> abre o cadastro (vindo de Oportunidades).
+    const linked = db.patients.find((p) => p.id === params.get("id"));
+    return linked ? { mode: "view", patient: linked } : null;
+  });
   const canWrite = can(session, "patients.write") || can(session, "patients.write_own");
 
-  // Limpa ?novo=1 da URL depois de abrir o painel (ação rápida do Início).
+  // Limpa ?novo=1 / ?id= da URL depois de abrir o painel (ação rápida do Início, Oportunidades).
   useEffect(() => {
-    if (params.get("novo") === "1") router.replace(`/c/${org}/pacientes`);
+    if (params.get("novo") === "1" || params.get("id")) router.replace(`/c/${org}/pacientes`);
   }, [params, org, router]);
 
   // O banco já entrega só os pacientes que a pessoa pode ver (profissional: os próprios, D-06).
@@ -204,6 +210,8 @@ function PatientDetails({ db, patient, canWrite, canDelete, onEdit, onClose }: {
         )}
       </section>
 
+      <FollowUpSummary db={db} patient={patient} />
+
       <div className="flex flex-wrap gap-2">
         {canWrite && (
           <Button variant="secondary" onClick={onEdit}>
@@ -294,5 +302,53 @@ function PatientForm({ db, patient, onDone }: { db: Db; patient?: Patient; onDon
         {patient ? "Salvar alterações" : "Cadastrar paciente"}
       </Button>
     </form>
+  );
+}
+
+/** Acompanhamento do paciente (docs/17): retornos, lista de espera e orçamentos, com atalhos. */
+function FollowUpSummary({ db, patient }: { db: Db; patient: Patient }) {
+  const { org } = useParams<{ org: string }>();
+  const session = useSession();
+  const base = `/c/${org}/inicio/oportunidades`;
+  const returns = db.followUps.filter((f) => f.patientId === patient.id && f.status === "pending");
+  const waiting = db.waitingList.filter((w) => w.patientId === patient.id && w.status === "waiting");
+  const proposals = db.proposals.filter((p) => p.patientId === patient.id && p.status === "open");
+  const canSchedule = can(session, "appointments.write") || can(session, "appointments.write_own");
+  const canPropose = can(session, "proposals.write") || can(session, "proposals.write_own");
+  const link = "inline-flex h-9 items-center gap-1.5 rounded-full border border-line-strong px-3 text-body-sm font-medium hover:bg-canvas";
+  if (!canSchedule && !canPropose && !returns.length && !waiting.length && !proposals.length) return null;
+
+  return (
+    <section>
+      <h3 className="mb-2 text-caption font-semibold text-ink-2">Acompanhamento</h3>
+      <ul className="mb-2 flex flex-col gap-1 text-body-sm">
+        {returns.map((f) => (
+          <li key={f.id}>
+            Retorno com {select.professional(db, f.professionalId).name} até {fmt(`${f.dueDate}T12:00`, "dd/MM/yyyy")}
+          </li>
+        ))}
+        {waiting.length > 0 && <li>Na lista de espera ({waiting.length} {waiting.length === 1 ? "pedido" : "pedidos"})</li>}
+        {proposals.map((p) => (
+          <li key={p.id}>Orçamento em aberto: {p.title}</li>
+        ))}
+      </ul>
+      <div className="flex flex-wrap gap-2">
+        {canSchedule && (
+          <>
+            <Link href={`${base}/retornos?novo=1&paciente=${patient.id}`} className={link}>
+              <Repeat className="size-4" aria-hidden /> Registrar retorno
+            </Link>
+            <Link href={`${base}/espera?novo=1&paciente=${patient.id}`} className={link}>
+              <ListPlus className="size-4" aria-hidden /> Lista de espera
+            </Link>
+          </>
+        )}
+        {canPropose && (
+          <Link href={`${base}/orcamentos?novo=1&paciente=${patient.id}`} className={link}>
+            <Receipt className="size-4" aria-hidden /> Novo orçamento
+          </Link>
+        )}
+      </div>
+    </section>
   );
 }

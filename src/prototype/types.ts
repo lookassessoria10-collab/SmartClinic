@@ -148,4 +148,169 @@ export interface Db {
   requests: BookingRequest[];
   events: AppointmentEvent[];
   viewer: Viewer;
+  /* Módulo Oportunidades (migrações 0014–0015). */
+  waitingList: WaitingEntry[];
+  followUps: FollowUp[];
+  proposals: Proposal[];
+  opportunitySettings: OpportunitySettings;
+  /** Resumo para o Início; null se o módulo não pôde ser lido (o resto da tela segue). */
+  opportunities: OpportunitySnapshot | null;
+}
+
+export type DayPeriod = "morning" | "afternoon" | "evening";
+
+export interface WaitingEntry {
+  id: string;
+  patientId: string;
+  serviceId: string | null;
+  professionalId: string | null;
+  weekdays: number[] | null;
+  periods: DayPeriod[] | null;
+  earliestDate?: string; // yyyy-MM-dd
+  latestDate?: string;
+  notes?: string;
+  status: "waiting" | "booked" | "removed";
+  appointmentId: string | null;
+  createdAt: string;
+}
+
+export interface FollowUp {
+  id: string;
+  patientId: string;
+  professionalId: string;
+  serviceId: string | null;
+  dueDate: string; // yyyy-MM-dd
+  status: "pending" | "scheduled" | "done" | "cancelled";
+  appointmentId: string | null;
+  sourceAppointmentId: string | null;
+  createdAt: string;
+}
+
+export interface ProposalItem {
+  id: string;
+  serviceId: string | null;
+  description: string;
+  quantity: number;
+  unitPriceCents: number;
+}
+
+export interface Proposal {
+  id: string;
+  patientId: string;
+  professionalId: string | null;
+  title: string;
+  status: "open" | "accepted" | "declined" | "cancelled" | "expired";
+  validUntil?: string;
+  totalCents: number;
+  lastActivityAt: string;
+  createdAt: string;
+  items: ProposalItem[];
+}
+
+export type OpportunityKind = "free_slots" | "cancelled_slot" | "follow_up_due" | "proposal_stale" | "no_show" | "cancelled_appointment";
+export type OpportunityStatus = "new" | "in_progress" | "resolved" | "dismissed" | "expired";
+export type OpportunityCategory = "agenda" | "pacientes" | "financeiro";
+
+export interface OpportunitySettings {
+  enabledKinds: OpportunityKind[];
+  proposalStaleDays: number;
+  slotHorizonDays: number;
+  followUpLeadDays: number;
+  priorityOverrides: Partial<Record<OpportunityKind, 1 | 2 | 3>>;
+  excludedProfessionalIds: string[];
+  receptionSeesValues: boolean;
+  professionalsSeeOwn: boolean;
+}
+
+/** Como o valor foi calculado (docs/17 §6). Preços somem quando a pessoa não pode ver valores. */
+export interface ValueBasis {
+  method: "free_slots" | "cancelled_slot" | "follow_up" | "proposal" | "none";
+  slots?: number;
+  free_minutes?: number;
+  slot_minutes?: number;
+  service_id?: string | null;
+  service_name?: string | null;
+  unit_price_cents?: number | null;
+  reference?: "most_booked" | "shortest";
+  total_cents?: number;
+  items?: number;
+  due_date?: string;
+  valid_until?: string | null;
+  last_activity_at?: string;
+}
+
+export interface OpportunityItem {
+  id: string;
+  kind: OpportunityKind;
+  category: OpportunityCategory;
+  status: OpportunityStatus;
+  priority: 1 | 2 | 3;
+  professional_id: string | null;
+  patient_id: string | null;
+  service_id: string | null;
+  appointment_id: string | null;
+  follow_up_id: string | null;
+  proposal_id: string | null;
+  window_start: string | null;
+  window_end: string | null;
+  slot_count: number | null;
+  value_cents: number | null;
+  value_visible: boolean;
+  basis: ValueBasis | null;
+  assigned_to: string | null;
+  detected_at: string;
+  expires_at: string | null;
+  resolved_at: string | null;
+  resolution: "auto" | "manual" | null;
+  dismiss_reason: string | null;
+  matches: number | null;
+  last_action_at: string | null;
+}
+
+export interface OpportunitySummary {
+  at_risk_cents: number | null;
+  at_risk_unpriced: number;
+  at_risk_hidden: number;
+  proposals_cents: number | null;
+  free_slots: number;
+  open: number;
+  high: number;
+  resolved: number;
+  agenda: number;
+  pacientes: number;
+  financeiro: number;
+}
+
+/** Resposta de `opportunities_feed` (migração 0015). */
+export interface OpportunitySnapshot {
+  refreshed_at: string | null;
+  horizon_days: number;
+  values_visible: boolean;
+  summary: OpportunitySummary;
+  total: number;
+  items: OpportunityItem[];
+}
+
+export interface OpportunityAction {
+  kind: "detected" | "reopened" | "contact" | "assigned" | "status" | "booked" | "resolved_auto" | "expired";
+  from: OpportunityStatus | null;
+  to: OpportunityStatus | null;
+  outcome: ContactOutcome | null;
+  note: string | null;
+  at: string;
+  appointment_id: string | null;
+  actor: string | null;
+  assigned: string | null;
+}
+
+export type ContactOutcome = "no_answer" | "call_back" | "scheduled" | "not_now" | "other";
+
+/** Resposta de `opportunity_detail`. */
+export interface OpportunityDetail {
+  id: string;
+  value_cents: number | null;
+  basis: ValueBasis | null;
+  free_ranges: { start: string; end: string }[];
+  actions: OpportunityAction[];
+  matches: { entry_id: string; patient_id: string; service_id: string; starts_at: string }[];
 }

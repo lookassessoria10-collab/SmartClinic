@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Building2, ChevronRight, Clock, Globe, ScrollText, Stethoscope, Tags, Upload, UsersRound, CreditCard, type LucideIcon } from "lucide-react";
+import { Building2, ChevronRight, Clock, Globe, ScrollText, Sparkles, Stethoscope, Tags, Upload, UsersRound, CreditCard, type LucideIcon } from "lucide-react";
 import { useDb } from "@/modules/clinic/client";
 import { Card, PageHeader } from "@/ui/primitives";
 import { Badge } from "@/ui/status-badge";
@@ -19,6 +19,10 @@ const AREAS: { icon: LucideIcon; title: string; description: string; path?: stri
   },
   { icon: Clock, title: "Horários", description: "Horário de atendimento, feriados, férias e bloqueios", path: "horarios" },
   { icon: UsersRound, title: "Equipe", description: "Membros, papéis e convites", path: "equipe" },
+  {
+    icon: Sparkles, title: "Oportunidades", description: "O que acompanhar, prazos e quem vê valores", path: "oportunidades",
+    count: (db) => `${db.opportunitySettings.enabledKinds.length} de 6 tipos ativos`,
+  },
   { icon: ScrollText, title: "Auditoria", description: "Quem fez o quê e quando", path: "auditoria" },
   { icon: Globe, title: "Agendamento online", description: "Link público para o paciente pedir horário" },
   { icon: Upload, title: "Importar e exportar", description: "Planilhas CSV e XLSX" },

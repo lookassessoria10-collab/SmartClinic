@@ -3,7 +3,23 @@ import { cache } from "react";
 import { addDays, subDays } from "date-fns";
 import { createSupabaseServerClient } from "@/server/supabase";
 import type { MemberContext } from "@/server/auth";
-import type { Appointment, AppointmentEvent, Db, Segment } from "@/prototype/types";
+import type {
+  Appointment, AppointmentEvent, Db, DayPeriod, OpportunityKind, OpportunitySettings, OpportunitySnapshot, Proposal, Segment,
+} from "@/prototype/types";
+
+const ALL_KINDS: OpportunityKind[] = ["free_slots", "cancelled_slot", "follow_up_due", "proposal_stale", "no_show", "cancelled_appointment"];
+
+/** Padrões da migração 0015, usados enquanto a clínica não tem a linha de configuração. */
+export const DEFAULT_OPPORTUNITY_SETTINGS: OpportunitySettings = {
+  enabledKinds: ALL_KINDS,
+  proposalStaleDays: 7,
+  slotHorizonDays: 14,
+  followUpLeadDays: 14,
+  priorityOverrides: {},
+  excludedProfessionalIds: [],
+  receptionSeesValues: false,
+  professionalsSeeOwn: true,
+};
 
 /**
  * Dados da clínica para as telas de agenda, pacientes e Início, lidos COM A SESSÃO da pessoa:
@@ -68,6 +84,54 @@ export const loadClinicDb = cache(async (ctx: MemberContext, viewerName: string)
   for (const r of [org, pros, svcs, links, patients, rules, blocks, appts, busy, events]) {
     if (r.error) throw new Error(`Falha ao carregar dados da clínica: ${r.error.message}`);
   }
+
+  // Lista de espera, retornos e orçamentos (0014) e o resumo de Oportunidades (0015). A RLS filtra;
+  // uma falha aqui não derruba a agenda nem os pacientes.
+  const seesOpportunities = ctx.permissions.has("opportunities.read") || ctx.permissions.has("opportunities.read_own");
+  const [waiting, followUps, proposals, items, oppSettings, feed] = await Promise.all([
+    supabase
+      .from("waiting_list")
+      .select("id, patient_id, service_id, professional_id, weekdays, periods, earliest_date, latest_date, notes, status, appointment_id, created_at")
+      .eq("organization_id", orgId)
+      .eq("status", "waiting")
+      .order("created_at")
+      .limit(1000),
+    supabase
+      .from("follow_ups")
+      .select("id, patient_id, professional_id, service_id, due_date, status, appointment_id, source_appointment_id, created_at")
+      .eq("organization_id", orgId)
+      .or(`status.in.(pending,scheduled),closed_at.gte.${subDays(now, 90).toISOString()}`)
+      .order("due_date")
+      .limit(2000),
+    supabase
+      .from("proposals")
+      .select("id, patient_id, professional_id, title, status, valid_until, total_cents, last_activity_at, created_at")
+      .eq("organization_id", orgId)
+      .or(`status.eq.open,closed_at.gte.${subDays(now, 180).toISOString()}`)
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    supabase
+      .from("proposal_items")
+      .select("id, proposal_id, service_id, description, quantity, unit_price_cents, position")
+      .eq("organization_id", orgId)
+      .order("position")
+      .limit(10000),
+    supabase.from("opportunity_settings").select("*").eq("organization_id", orgId).maybeSingle(),
+    seesOpportunities
+      ? supabase.rpc("opportunities_feed", { p_org: orgId, p_limit: 3 })
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  for (const [label, r] of [["lista de espera", waiting], ["retornos", followUps], ["orçamentos", proposals], ["itens", items], ["configurações", oppSettings], ["oportunidades", feed]] as const) {
+    if (r.error) console.error(`[clínica] falha ao carregar ${label}`, r.error.code, r.error.message);
+  }
+  const itemsByProposal = new Map<string, Proposal["items"]>();
+  for (const i of items.data ?? []) {
+    itemsByProposal.set(i.proposal_id, [
+      ...(itemsByProposal.get(i.proposal_id) ?? []),
+      { id: i.id, serviceId: i.service_id, description: i.description, quantity: i.quantity, unitPriceCents: i.unit_price_cents },
+    ]);
+  }
+  const s = oppSettings.data;
 
   const prosByService = new Map<string, string[]>();
   for (const l of links.data ?? []) {
@@ -187,5 +251,55 @@ export const loadClinicDb = cache(async (ctx: MemberContext, viewerName: string)
       name: viewerName,
       professionalId: professionals.find((p) => p.userId === ctx.user.id)?.id ?? null,
     },
+    waitingList: (waiting.data ?? []).map((w) => ({
+      id: w.id,
+      patientId: w.patient_id,
+      serviceId: w.service_id,
+      professionalId: w.professional_id,
+      weekdays: w.weekdays,
+      periods: w.periods as DayPeriod[] | null,
+      earliestDate: w.earliest_date ?? undefined,
+      latestDate: w.latest_date ?? undefined,
+      notes: w.notes ?? undefined,
+      status: w.status,
+      appointmentId: w.appointment_id,
+      createdAt: w.created_at,
+    })),
+    followUps: (followUps.data ?? []).map((f) => ({
+      id: f.id,
+      patientId: f.patient_id,
+      professionalId: f.professional_id,
+      serviceId: f.service_id,
+      dueDate: f.due_date,
+      status: f.status,
+      appointmentId: f.appointment_id,
+      sourceAppointmentId: f.source_appointment_id,
+      createdAt: f.created_at,
+    })),
+    proposals: (proposals.data ?? []).map((p) => ({
+      id: p.id,
+      patientId: p.patient_id,
+      professionalId: p.professional_id,
+      title: p.title,
+      status: p.status,
+      validUntil: p.valid_until ?? undefined,
+      totalCents: p.total_cents,
+      lastActivityAt: p.last_activity_at,
+      createdAt: p.created_at,
+      items: itemsByProposal.get(p.id) ?? [],
+    })),
+    opportunitySettings: s
+      ? {
+          enabledKinds: s.enabled_kinds,
+          proposalStaleDays: s.proposal_stale_days,
+          slotHorizonDays: s.slot_horizon_days,
+          followUpLeadDays: s.follow_up_lead_days,
+          priorityOverrides: (s.priority_overrides ?? {}) as OpportunitySettings["priorityOverrides"],
+          excludedProfessionalIds: s.excluded_professional_ids,
+          receptionSeesValues: s.reception_sees_values,
+          professionalsSeeOwn: s.professionals_see_own,
+        }
+      : DEFAULT_OPPORTUNITY_SETTINGS,
+    opportunities: (feed.data as OpportunitySnapshot | null) ?? null,
   };
 });
