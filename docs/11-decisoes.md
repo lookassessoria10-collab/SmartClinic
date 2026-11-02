@@ -35,6 +35,10 @@ Status: **Proposta** até a aprovação da Fase 1; depois **Aceita**. Mudanças 
 | 027 | Auditoria de pacientes e agendamentos guarda só os **nomes** dos campos alterados (`app.audit_row_fields_only`) | A trilha (retida por 5 anos) não pode virar cópia de dados pessoais de saúde que sobreviveria à exclusão do paciente | Valores antes/depois, como nas tabelas de configuração |
 | 028 | Agendamento só por funções do banco (`create_appointment`, `reschedule_appointment`, `set_appointment_status`), que conferem horário de atendimento no fuso da clínica, bloqueios e transições; o conflito é garantido pela exclusão GiST | Uma regra, um lugar; duas pessoas clicando no mesmo horário → só uma consegue | Validar só no servidor Next (corrida entre requisições) |
 | 029 | Telas da clínica recebem os dados num único objeto carregado no layout (`loadClinicDb`) e revalidado após cada ação | Reaproveita os componentes de agenda do protótipo sem reescrever; a RLS filtra o que entra | Uma consulta por tela (refazer todos os componentes) — revisitar se o volume crescer |
+| 030 | Oportunidades detectadas **no banco** (`app.opportunity_candidates` + `app.refresh_opportunities`, security definer), gravadas com `dedupe_key` única por clínica (docs/17) | Ninguém grava oportunidade inventada; cada regra é SQL testado no pgTAP; a mesma situação nunca vira duas | Motor em TypeScript no servidor (o resultado teria de ser confiado ao chamador) |
+| 031 | Atualização sob demanda: gatilhos marcam `opportunity_settings.stale` quando agenda, retornos ou orçamentos mudam; o feed recalcula se marcado ou se passou de 10 min | Sem cron nem Realtime; custo só quando alguém abre a tela | `pg_cron` de hora em hora (pode somar depois) |
+| 032 | Valores de oportunidade só saem pelo feed, que mascara para quem não pode ver; a coluna `value_cents` não tem GRANT de leitura | "Usuário sem permissão não vê valores" garantido no banco, não só na tela | Esconder na interface |
+| 033 | Horários livres contados **sem sobreposição** (minutos livres ÷ duração + intervalo do serviço de referência) e trechos liberados por cancelamento descontados do dia | Valor potencial nunca conta o mesmo horário duas vezes | Contar todos os inícios possíveis de 15 em 15 min (infla o número) |
 
 ## Parte B — Decisões que exigem sua aprovação
 
@@ -76,6 +80,7 @@ Marque cada uma com ✅ (aprovado como proposto), ✏️ (aprovado com ajuste) o
 | **D-22** | Escopo antes do primeiro teste externo | Etapas A (cadastros) + B (agenda) reais; agendamento online e financeiro em seguida | ✅ Aprovada |
 | **D-23** | Testadores | Pessoas convidadas, **somente dados fictícios**; staging gratuito, uso não comercial | ✅ Aprovada |
 | **D-24** | E-mail dos testadores | SMTP próprio gratuito (Resend) com domínio do cliente; configurado por ele no painel | ✅ Aprovada |
+| **D-25** | Módulo Oportunidades (docs/17) | Dentro de Início, sem 6º item no menu (O-1); valores para gestão e para o profissional nos próprios, recepção opcional (O-2); atualização sob demanda (O-3); orçamento com itens (O-4); regras nas migrações, parâmetros por clínica (O-5). Lista de espera, retornos e orçamentos entram no MVP na forma mínima | ✅ Aprovada (2026-11-02) |
 
 ### Perguntas abertas (não bloqueiam a Fase 2)
 1. Haverá período de teste gratuito? Quantos dias?

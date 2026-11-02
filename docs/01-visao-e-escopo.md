@@ -64,7 +64,7 @@ e receber agendamentos online. Corresponde às Fases 3 a 8 + o mínimo das Fases
 
 - Prontuário clínico, odontograma, anamnese, prescrição.
 - Múltiplas unidades na interface (o banco já suporta).
-- Pacotes de sessões, recorrência, lista de espera.
+- Pacotes de sessões e recorrência. (Lista de espera, retornos registrados e orçamentos entraram na forma mínima com o módulo Oportunidades — docs/17, D-25.)
 - WhatsApp, SMS, campanhas.
 - Gateway de pagamento, emissão fiscal, TISS/TUSS, integração bancária.
 - HL7 FHIR, RNDS, integrações com operadoras e outros sistemas.

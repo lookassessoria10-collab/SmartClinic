@@ -393,6 +393,19 @@ create table external_identifiers (          -- base para integrações futuras
 );
 ```
 
+## 8b. Oportunidades (migrações 0014–0015, docs/17)
+
+| Tabela | Papel |
+|--------|-------|
+| `waiting_list` | Pedido de horário: paciente, serviço/profissional opcionais, dias, períodos, datas; `booked` só via `book_from_waiting_list` |
+| `follow_ups` | Retorno registrado: paciente, profissional, serviço opcional, prazo; `scheduled`/`done` ligados ao agendamento pelo sistema |
+| `proposals`, `proposal_items` | Orçamento administrativo; total calculado em `save_proposal` |
+| `opportunity_settings` | Parâmetros por clínica + marca `stale` e última atualização |
+| `opportunities` | Uma linha por situação (`dedupe_key` única por clínica), com valor, `value_basis` (cálculo), status e responsável |
+| `opportunity_actions` | Histórico imutável de cada oportunidade (ator nulo = sistema) |
+
+Todas com `organization_id`, chaves compostas por organização e RLS. Funções: `opportunities_feed`, `opportunity_detail`, `opportunity_set_status`, `opportunity_log_contact`, `opportunity_assign`, `opportunity_record_booking`, `book_from_waiting_list`, `save_opportunity_settings`, `save_proposal`, `set_proposal_status`.
+
 ## 9. Auditoria
 
 ```sql

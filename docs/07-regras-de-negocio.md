@@ -49,6 +49,15 @@ requested ──► confirmed ──► completed
 - **RN-42** `admin_notes` exibe aviso permanente: "Não registre informações clínicas aqui."
 - **RN-43** Exclusão é lógica; dados mantidos pelo prazo de retenção e excluídos definitivamente por rotina documentada, respeitando obrigações legais.
 
+## Oportunidades (docs/17)
+- **RN-80** Cinco tipos, todos por regra fixa (sem IA): horários livres, horário liberado por cancelamento, retorno registrado pendente, orçamento sem atualização, falta/cancelamento sem novo agendamento. Uma oportunidade por situação (`dedupe_key`).
+- **RN-81** Horários livres: horário de atendimento no fuso da clínica − bloqueios − agendamentos confirmados − solicitações com reserva válida − horários já passados − trechos liberados por cancelamento (estes viram RN-80 B).
+- **RN-82** Nada é agendado sozinho: a oportunidade abre a agenda preenchida e alguém confirma. Lista de espera é só sugestão.
+- **RN-83** Retorno só existe se alguém o registrou; nunca é inferido do histórico. Retorno com agendamento futuro (mesmo paciente e profissional) não aparece como pendente.
+- **RN-84** Status: nova → em andamento → resolvida/descartada (descarte exige motivo); expirada pelo prazo. Só o sistema reabre, e só o que ele mesmo encerrou quando a situação volta.
+- **RN-85** Valores são estimativa pelo preço do serviço e ficam separados: potencial em risco (A + B), orçamentos parados (D, nunca "receita perdida"), sem valor para faltas e cancelamentos (E). Sem preço → "indisponível", nunca zero.
+- **RN-86** Falta e cancelamento são fatos; a tela nunca os chama de desinteresse.
+
 ## Financeiro
 - **RN-50** Valores em centavos; nunca ponto flutuante.
 - **RN-51** `paid` exige data de pagamento; `cancelled` mantém registro.

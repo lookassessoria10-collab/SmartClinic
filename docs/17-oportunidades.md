@@ -1,8 +1,11 @@
-# 17 — Módulo Oportunidades: auditoria e plano
+# 17 — Módulo Oportunidades
 
-> Status: **proposta (2026-11-02), aguardando aprovação**. Nenhuma migração ou mudança
-> estrutural feita. Muda o escopo do MVP: lista de espera, retornos e orçamentos estavam
-> "fora do MVP" (docs/01 §4) e entram aqui na forma mínima pedida.
+> Status: **implementado (2026-11-02)**, plano e decisões O-1 a O-5 aprovados (D-25).
+> Falta aplicar as migrações 0014–0015 no staging antes de publicar (§8). Muda o escopo do
+> MVP: lista de espera, retornos e orçamentos estavam "fora do MVP" (docs/01 §4) e entram
+> aqui na forma mínima.
+>
+> Uso no dia a dia: §10. Arquivos: §11. Testes: §12.
 
 ## 1. O que o projeto já tem
 
@@ -148,3 +151,38 @@ Publicação: branch → CI → `main`, e **antes** do deploy aplicar 0014–001
 - `database.types.ts` atualizado à mão (Docker local indisponível), como nas migrações 0011–0013.
 - Preço dos serviços já é legível por todos os membros (comportamento atual de Serviços);
   o módulo esconde os **totais e valores das oportunidades**, não o preço de tabela.
+
+## 10. Como usar
+
+| Onde | O quê |
+|------|-------|
+| Início → cartão **Oportunidades** → "Ver todas" | `/c/<clínica>/inicio/oportunidades`: indicadores, filtros (período, profissional, ordem), abas Todas · Agenda · Pacientes · Financeiro · Resolvidas |
+| Cartão → **Agendar** | Abre a agenda já preenchida (profissional, primeiro horário livre, serviço e, quando houver, paciente). A pessoa confirma; o banco confere conflito e horário de atendimento |
+| Cartão → **Detalhes** / **Ver sugestões** | Como o valor foi calculado, trechos livres, pacientes compatíveis da lista de espera ("Agendar às HH:mm"), copiar telefone, registrar contato, responsável, resolver, descartar com motivo, histórico |
+| Abas **Lista de espera**, **Retornos**, **Orçamentos** | Cadastro e acompanhamento de cada estrutura (§4) |
+| Agenda → atendimento → **Registrar retorno** | Retorno combinado no atendimento (prazos rápidos de 7 a 90 dias) |
+| Pacientes → cadastro → **Acompanhamento** | Retornos, pedidos na lista de espera e orçamentos do paciente, com atalhos |
+| Gestão → **Oportunidades** | Tipos ativos, prioridade por tipo, prazos, profissionais incluídos, quem vê valores |
+
+Atualização: sozinha ao abrir a tela quando algo mudou (marca `stale`) ou a cada 10 min;
+botão "Atualizar" força na hora. Agendar a partir de uma oportunidade grava "Agendamento
+feito" no histórico com quem agendou.
+
+## 11. Arquivos
+
+| Camada | Arquivos |
+|--------|----------|
+| Banco | `supabase/migrations/20261103000014_waitlist_followups_proposals.sql`, `20261103000015_opportunities.sql` |
+| Regras de tela e validação | `src/modules/opportunities/{labels,filters,schemas,booking}.ts` |
+| Ações do servidor | `src/modules/opportunities/actions.ts`; `createAppointment` aceita `opportunityId` (`src/modules/scheduling/actions.ts`) |
+| Telas | `src/app/c/[org]/inicio/oportunidades/{page,espera,retornos,orcamentos}`, `src/app/c/[org]/gestao/oportunidades`; componentes em `src/modules/opportunities/components/` |
+| Integrações | Início (cartão), Gestão (área), agenda (pré-preenchimento `?novo=1&profissional=&inicio=&servico=&paciente=&oportunidade=&espera=`), painel do agendamento (Registrar retorno), Pacientes (`?id=` e Acompanhamento), `loadClinicDb` |
+| Tipos | `src/prototype/types.ts`, `src/server/database.types.ts` (à mão, §9) |
+
+## 12. Testes
+
+| Tipo | Arquivo | Cobre |
+|------|---------|-------|
+| pgTAP | `supabase/tests/database/06_opportunities.test.sql` | Clínica A × B, valores mascarados (recepção, coluna sem GRANT), profissional só os próprios, cancelamento libera horário, sem dupla contagem, lista de espera compatível e atômica, horário sobreposto recusado, sem duplicatas, retorno agendado some e volta se cancelado, orçamento fechado some, descarte com motivo e sem reabertura manual, bloqueio impede sugestão, configurações |
+| Vitest | `src/modules/opportunities/opportunities.test.ts` | Filtros da URL, textos neutros, valores e "como calculamos", validação das ações, primeiro horário agendável e link para a agenda |
+| Playwright | `tests/e2e/oportunidades.spec.ts`, `tests/e2e/a11y.spec.ts` | Tela com indicadores e detalhes; cancelar → lista de espera → agendar → resolvida; descarte com motivo; axe em todas as telas novas e no celular (375 px, sem rolagem horizontal) |

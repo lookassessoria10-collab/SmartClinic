@@ -12,6 +12,7 @@ Deixar a plataforma usável no dia a dia de uma clínica, para pessoas convidada
 | **A. Cadastros** (Fase 4) | Profissionais (conta da equipe ligada, cor, conselho, serviços), Serviços (duração, intervalo, preço, quem realiza), Pacientes (busca, duplicidade, edição, exclusão lógica, histórico) | Em teste |
 | **B. Agenda** (Fase 5) | Horário de atendimento semanal, bloqueios (feriado, férias, folga, pausa), agenda dia/semana/mês com criar, remarcar, concluir, falta e cancelar; Início com números reais; onboarding cria serviços e horário inicial | Em teste |
 | C. Agendamento online (Fase 6) | Página pública, fila de aprovação, anti-robô | Depois da rodada de testes |
+| **Oportunidades** ([17](17-oportunidades.md)) | Horários livres, horário liberado por cancelamento com sugestão da lista de espera, retornos registrados, orçamentos parados, faltas/cancelamentos sem remarcação; lista de espera, retornos e orçamentos | Pronto para teste |
 | D. Financeiro (Fase 8) | Recebimentos e despesas | Depois de C |
 
 Telas que ainda não são reais mostram **"Em breve"**, nunca dados inventados: Financeiro,

@@ -39,6 +39,11 @@ Legenda: ✅ permitido · 🔸 apenas os próprios (atendimentos em que é o pro
 | `finance.read` | ✅ | —¹ | — |
 | `finance.write` (registrar recebimento) | ✅ | ✅ | — |
 | `finance.read_own` (recebimentos dos próprios atendimentos) | ✅ | — | ✅¹ |
+| **Oportunidades** (docs/17, migração 0014) | | | |
+| `opportunities.read` / `opportunities.work` | ✅ | ✅ | 🔸² |
+| Valores das oportunidades (feed) | ✅ | —³ | 🔸 |
+| `proposals.read` / `proposals.write` (orçamentos) | ✅ | ✅ | 🔸 |
+| Lista de espera e retornos | segue `appointments.*` | segue `appointments.*` | 🔸 |
 | **Gestão** | | | |
 | `members.manage` | ✅ | — | — |
 | `org.settings` (dados, onboarding, slug, agenda pública) | ✅ | — | — |
@@ -48,6 +53,10 @@ Legenda: ✅ permitido · 🔸 apenas os próprios (atendimentos em que é o pro
 
 ¹ Valor padrão configurável pelo gestor em *Gestão → Permissões* (pós-MVP: papéis customizados
 usando a mesma tabela `role_permissions` por organização).
+
+² Profissional: `opportunities.read_own` / `work_own`, só as ligadas a ele; a clínica pode
+desligar em *Gestão → Oportunidades*. ³ A gestão pode liberar os valores estimados para a
+recepção na mesma tela; orçamentos a recepção já vê, porque é ela quem os registra.
 
 Recepção registra recebimentos, mas não vê o resumo financeiro — padrão comum em clínicas
 pequenas para não expor faturamento. Confirmar em D-06.
