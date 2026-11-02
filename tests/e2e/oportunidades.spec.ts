@@ -39,6 +39,8 @@ test.describe("oportunidades", () => {
     const first = `Cancela E2E ${stamp}`;
     const waiting = `Espera E2E ${stamp}`;
     await login(page, SEED.ana, SEED.password, "/c/clinica-aurora/inicio");
+    // Espera o login terminar: navegar antes cancelaria a ação de entrar.
+    await expect(page).toHaveURL(/\/c\/clinica-aurora\/inicio/);
     await newPatient(page, first, String(stamp).slice(-8));
     await newPatient(page, waiting, String(stamp + 1).slice(-8));
 
