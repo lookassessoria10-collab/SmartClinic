@@ -59,6 +59,7 @@ pelo banco mesmo chamando as funções diretamente — a interface não é a pro
 | A5 | Ids (uuid) recebidos nas ações não são validados pelo Zod antes de ir ao banco | O banco recusa formato inválido (erro tratado, mensagem genérica) e confere o vínculo | Ao criar as ações da Fase 4 |
 | A6 | Supabase não oferece códigos de recuperação de MFA | Quem perder o celular é atendido pelo suporte (Fase 9, com verificação de identidade e auditoria) | Fase 9 |
 | A7 | Aviso do SDK sobre `getSession()` a cada requisição (checagem de "MFA pendente") | Usado só para decidir a tela; o banco valida o nível da sessão pelo token | Quando o SDK oferecer a checagem pelo token já validado |
+| A8 | (2026-11-02) Cadastro sem confirmação de e-mail: o servidor cria a conta já confirmada (`AUTH_EMAIL_CONFIRMATION` vazio). Alguém pode se cadastrar com um e-mail que não é seu | Destrava os testes sem depender de SMTP. Dados só fictícios; aceitar convite continua exigindo o código secreto enviado ao e-mail convidado; o dono real do e-mail recupera a conta por "Esqueci minha senha" | Antes de clientes reais: SMTP próprio e `AUTH_EMAIL_CONFIRMATION=required` |
 
 ## 5. Fora do escopo desta fase
 

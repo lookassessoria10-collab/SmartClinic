@@ -79,17 +79,24 @@ export async function freshTotp(secret: string) {
   return totp(secret, step);
 }
 
-/** Cria conta, confirma o e-mail pelo link e conclui o onboarding. Devolve o slug criado. */
+/**
+ * Cria conta e conclui o onboarding. Devolve o slug criado. Sem confirmação obrigatória
+ * (padrão) o cadastro já entra; com AUTH_EMAIL_CONFIRMATION=required, confirma pelo e-mail.
+ */
 export async function signUpWithClinic(page: Page, opts: { name: string; email: string; password: string; clinic: string }) {
   await page.goto("/cadastro");
   await page.getByLabel("Seu nome completo").fill(opts.name);
   await page.getByLabel("E-mail").fill(opts.email);
   await page.getByLabel("Senha", { exact: true }).fill(opts.password);
   await page.getByRole("button", { name: "Criar conta" }).click();
-  await expect(page.getByRole("heading", { name: "Confirme seu e-mail" })).toBeVisible();
 
-  const { link } = await waitForEmailLink(opts.email, /Confirme seu e-mail/);
-  await page.goto(link);
+  const confirm = page.getByRole("heading", { name: "Confirme seu e-mail" });
+  const onboarding = page.getByLabel("Nome do estabelecimento");
+  await expect(confirm.or(onboarding)).toBeVisible();
+  if (await confirm.isVisible()) {
+    const { link } = await waitForEmailLink(opts.email, /Confirme seu e-mail/);
+    await page.goto(link);
+  }
   await expect(page).toHaveURL(/\/onboarding/);
 
   await page.getByLabel("Nome do estabelecimento").fill(opts.clinic);

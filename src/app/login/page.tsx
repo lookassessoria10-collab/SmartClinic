@@ -28,6 +28,7 @@ function LoginForm() {
     : params.get("erro") === "navegador" ? { tone: "danger" as const, text: "Abra o link de nova senha no mesmo aparelho e navegador em que você pediu, ou peça um novo link em “Esqueci minha senha”." }
     : params.get("saiu") ? { tone: "info" as const, text: "Você saiu da sua conta." }
     : params.get("confirmado") ? { tone: "success" as const, text: "E-mail confirmado. Entre com sua senha para continuar." }
+    : params.get("criada") ? { tone: "success" as const, text: "Conta criada. Entre com seu e-mail e senha." }
     : params.get("next") ? { tone: "info" as const, text: "Entre para continuar." }
     : null;
 

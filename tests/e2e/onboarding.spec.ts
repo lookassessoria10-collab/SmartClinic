@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { signUpWithClinic, uniqueEmail } from "./helpers";
 
-test("cadastro → confirmação por e-mail → onboarding cria a clínica", async ({ page }) => {
+test("cadastro → entra direto → onboarding cria a clínica", async ({ page }) => {
   const email = uniqueEmail("gestora");
   const slug = await signUpWithClinic(page, {
     name: "Gestora E2E",
