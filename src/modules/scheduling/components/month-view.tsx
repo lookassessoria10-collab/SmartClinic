@@ -32,14 +32,17 @@ export function MonthView({ db, anchor, appointments, onPickDay }: { db: Db; anc
             <button
               key={+d}
               onClick={() => onPickDay(d)}
-              aria-label={`${fmt(d, "EEEE, d 'de' MMMM")}: ${list.length} agendamentos${pending ? `, ${pending} aguardando aprovação` : ""}. Abrir dia.`}
               className={cn(
                 "flex min-h-20 flex-col gap-1 border-r border-b border-line p-1.5 text-left transition-colors hover:bg-canvas sm:min-h-28 sm:p-2 [&:nth-child(7n)]:border-r-0",
                 !isSameMonth(d, anchor) && "bg-canvas/60 text-ink-3",
               )}
             >
-              <span className={cn("tabular grid size-7 place-items-center rounded-full text-body-sm font-medium", today && "bg-accent text-on-accent")}>{d.getDate()}</span>
-              <span className="hidden flex-col gap-0.5 sm:flex">
+              {/* Resumo para leitor de tela; o conteúdo visual abaixo fica oculto dele (sem rótulo divergente do texto). */}
+              <span className="sr-only">
+                {`${fmt(d, "EEEE, d 'de' MMMM")}: ${list.length} agendamento${list.length === 1 ? "" : "s"}${pending ? `, ${pending} aguardando aprovação` : ""}. Abrir dia.`}
+              </span>
+              <span aria-hidden className={cn("tabular grid size-7 place-items-center rounded-full text-body-sm font-medium", today && "bg-accent text-on-accent")}>{d.getDate()}</span>
+              <span aria-hidden className="hidden flex-col gap-0.5 sm:flex">
                 {list.slice(0, 3).map((a) => (
                   <span key={a.id} className="flex items-center gap-1 truncate text-caption">
                     <span className="size-1.5 shrink-0 rounded-full" style={{ background: `var(--agenda-${select.professional(db, a.professionalId).color})` }} aria-hidden />

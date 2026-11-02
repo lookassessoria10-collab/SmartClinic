@@ -190,9 +190,10 @@ function Block({ db, a, compact, onOpen }: { db: Db; a: Appointment; compact: bo
   const short = minutes < 40;
 
   return (
+    // Sem aria-label: o nome acessível é o texto visível + complemento só para leitor de tela
+    // (assim o que se vê está sempre contido no que se ouve — WCAG 2.5.3).
     <button
       onClick={() => onOpen(a.id)}
-      aria-label={`${time(a.startsAt)}, ${name}${service ? `, ${service}` : ""}, ${prof.name}. Status: ${labelFor(a.status)}. Abrir detalhes.`}
       className={cn(
         "absolute inset-x-0.5 z-[2] overflow-hidden rounded-sm border-l-[3px] px-1.5 py-1 text-left text-caption shadow-xs transition-shadow hover:shadow-md",
         "focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none",
@@ -223,6 +224,9 @@ function Block({ db, a, compact, onOpen }: { db: Db; a: Appointment; compact: bo
           {a.status === "requested" && <span className="block font-medium text-warning">Aguardando</span>}
         </>
       )}
+      <span className="sr-only">
+        {`, ${short ? `${name}, ${time(a.startsAt)}${service ? `, ${service}` : ""}, ` : ""}${prof.name}. Status: ${labelFor(a.status)}. Abrir detalhes.`}
+      </span>
     </button>
   );
 }
