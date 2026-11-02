@@ -55,7 +55,7 @@ O `link` pede a senha do banco (digite você). O `db push` aplica `supabase/migr
 
 | Onde | O quê |
 |------|-------|
-| Authentication → Sign In / Providers → Email | Confirm email: **ligado**; Secure password change: **ligado**; Minimum password length: **10** |
+| Authentication → Sign In / Providers → Email | **Enable Email provider: ligado** (desligado, ninguém entra: a tela mostra o código `email_provider_disabled`); Confirm email: **ligado**; Secure password change: **ligado**; Minimum password length: **10** |
 | Authentication → Sign In / Providers | Desligar todos os outros provedores (D-20); Anonymous sign-ins: **desligado** |
 | Authentication → Multi-Factor | TOTP (App Authenticator): **ligado** |
 | Authentication → Attack Protection | Leaked password protection: ligar **se disponível no plano** (D-21) |
@@ -93,7 +93,10 @@ A senha SMTP fica só no painel do Supabase.
 
 ## 6. Conferência (eu faço, quando você avisar)
 
-- Migrações: as 10 aplicadas, RLS ligada em todas as tabelas, `anon` sem acesso.
+- Migrações: todas aplicadas, RLS ligada em todas as tabelas, `anon` sem acesso.
+- `GET https://SEU_PROJECT_REF.supabase.co/auth/v1/settings` (cabeçalho `apikey` com a chave
+  publicável): `external.email` precisa ser `true`. Recusas de login que não são senha errada
+  ficam em `audit_logs` como `auth.login_error`, com o código em `changes->>'reason'`.
 - `https://SEU-APP.vercel.app/login`: cabeçalhos de segurança, cookie `HttpOnly` + `Secure`.
 - Cadastro → e-mail → onboarding com uma conta sua; convite (se houver SMTP).
 - Chave secreta ausente do JavaScript entregue ao navegador.

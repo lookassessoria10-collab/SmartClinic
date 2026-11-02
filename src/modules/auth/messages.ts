@@ -11,8 +11,16 @@ export const AUTH_MESSAGES = {
   weakPassword: "Escolha uma senha mais forte (evite senhas comuns ou já vazadas).",
   linkInvalid: "O link expirou ou já foi usado. Peça um novo.",
   emailSendFailed: "Não conseguimos enviar o e-mail de confirmação agora. Tente de novo em alguns minutos.",
+  emailLoginDisabled: "O acesso com e-mail e senha está desativado no momento. Avise o suporte da plataforma.",
+  serviceMisconfigured: "O serviço de acesso está indisponível no momento. Avise o suporte da plataforma.",
   unexpected: "Não foi possível concluir agora. Tente de novo em instantes.",
 } as const;
+
+/** Código curto para o suporte localizar o motivo (sem dado pessoal). */
+const withCode = (message: string, error: { code?: string; status?: number } | null | undefined) => {
+  const code = error?.code ?? (error?.status ? `http_${error.status}` : null);
+  return code ? `${message} (código: ${code})` : message;
+};
 
 /** Falha do Auth ao ENVIAR o e-mail (SMTP recusou, endereço não autorizado no e-mail padrão). */
 export function isEmailSendFailure(error: { code?: string; status?: number; message?: string } | null | undefined) {
@@ -45,7 +53,13 @@ export function authErrorMessage(error: { code?: string; status?: number; messag
     case "flow_state_not_found":
     case "bad_code_verifier":
       return AUTH_MESSAGES.linkInvalid;
+    // Configuração do projeto no Supabase (provedor de e-mail desligado, cadastro desligado).
+    case "email_provider_disabled":
+    case "signup_disabled":
+      return withCode(AUTH_MESSAGES.emailLoginDisabled, error);
   }
   if (error?.status === 429) return AUTH_MESSAGES.tooManyAttempts;
-  return AUTH_MESSAGES.unexpected;
+  // Chave/URL do Supabase errada na hospedagem: a API responde 401 "Invalid API key".
+  if (error?.status === 401 || /api key/i.test(error?.message ?? "")) return withCode(AUTH_MESSAGES.serviceMisconfigured, error);
+  return withCode(AUTH_MESSAGES.unexpected, error);
 }

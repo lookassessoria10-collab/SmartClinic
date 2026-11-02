@@ -8,6 +8,9 @@ describe("authErrorMessage", () => {
     [{ code: "over_email_send_rate_limit", status: 429 }, AUTH_MESSAGES.tooManyAttempts],
     [{ code: "invalid_credentials", status: 400 }, AUTH_MESSAGES.invalidCredentials],
     [{ code: "otp_expired", status: 403 }, AUTH_MESSAGES.linkInvalid],
-    [{ code: "unexpected_failure", status: 500, message: "Database error" }, AUTH_MESSAGES.unexpected],
+    // Recusas sem culpa do usuário levam o código para o suporte achar o motivo.
+    [{ code: "unexpected_failure", status: 500, message: "Database error" }, `${AUTH_MESSAGES.unexpected} (código: unexpected_failure)`],
+    [{ code: "email_provider_disabled", status: 400 }, `${AUTH_MESSAGES.emailLoginDisabled} (código: email_provider_disabled)`],
+    [{ status: 401, message: "Invalid API key" }, `${AUTH_MESSAGES.serviceMisconfigured} (código: http_401)`],
   ])("%j → mensagem certa", (error, message) => expect(authErrorMessage(error)).toBe(message));
 });

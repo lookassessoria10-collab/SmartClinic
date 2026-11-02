@@ -35,7 +35,14 @@ export async function signIn(_prev: FormState, formData: FormData): Promise<Form
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.user) {
-    if (error?.code !== "email_not_confirmed") await recordAuthEvent("auth.login_failed", { email });
+    // Só senha/e-mail errados contam para o limite; recusas por configuração ficam registradas
+    // com o motivo (código do Supabase), sem travar ninguém.
+    const wrongCredentials = error?.code === "invalid_credentials" || error?.code === "user_not_found";
+    if (wrongCredentials) await recordAuthEvent("auth.login_failed", { email });
+    else if (error?.code !== "email_not_confirmed") {
+      console.error("[auth] signInWithPassword", error?.status, error?.code, error?.message);
+      await recordAuthEvent("auth.login_error", { email, reason: error?.code ?? `http_${error?.status ?? "?"}` });
+    }
     return { message: authErrorMessage(error), values };
   }
   // Com o hash do e-mail: login com sucesso zera a contagem de falhas desse e-mail.
@@ -120,9 +127,10 @@ async function signUpWithoutEmail(
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email: input.email, password: input.password });
   if (error) {
-    // Conta criada; se o login automático falhar, a pessoa entra pela tela de login.
-    console.error("[auth] login após cadastro", error.code, error.message);
-    redirect("/login?criada=1");
+    // Conta criada, mas o Supabase recusou o login: mostra o motivo em vez de esconder.
+    console.error("[auth] login após cadastro", error.status, error.code, error.message);
+    await recordAuthEvent("auth.login_error", { email: input.email, reason: error.code ?? `http_${error.status ?? "?"}` });
+    return { message: `Sua conta foi criada, mas não conseguimos entrar agora. ${authErrorMessage(error)}`, values };
   }
   await recordAuthEvent("auth.login", { userId: created.data.user?.id, email: input.email });
   redirect("/onboarding");

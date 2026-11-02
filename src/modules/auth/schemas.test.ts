@@ -36,7 +36,9 @@ describe("mensagens de erro", () => {
     expect(authErrorMessage({ status: 429 })).toBe(AUTH_MESSAGES.tooManyAttempts);
   });
 
-  it("erro desconhecido não vaza detalhes", () => {
-    expect(authErrorMessage({ code: "database_error_xyz" })).toBe(AUTH_MESSAGES.unexpected);
+  it("erro desconhecido não vaza detalhes: só o código curto, nunca a mensagem interna", () => {
+    expect(authErrorMessage({ code: "database_error_xyz", message: "relation users does not exist" })).toBe(
+      `${AUTH_MESSAGES.unexpected} (código: database_error_xyz)`,
+    );
   });
 });

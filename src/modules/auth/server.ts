@@ -43,6 +43,7 @@ export async function isLoginThrottled(email: string): Promise<boolean> {
 export async function recordAuthEvent(
   action:
     | "auth.login_failed"
+    | "auth.login_error"
     | "auth.login"
     | "auth.logout"
     | "auth.signup"
@@ -52,7 +53,7 @@ export async function recordAuthEvent(
     | "auth.mfa_failed"
     | "auth.mfa_enabled"
     | "auth.mfa_disabled",
-  opts: { email?: string | null; userId?: string } = {},
+  opts: { email?: string | null; userId?: string; reason?: string } = {},
 ) {
   try {
     const admin = createSupabaseAdminClient();
@@ -61,7 +62,7 @@ export async function recordAuthEvent(
       actor_kind: opts.userId ? "member" : "public",
       action,
       entity: "auth",
-      changes: opts.email ? { email_hash: emailHash(opts.email) } : null,
+      changes: opts.email || opts.reason ? { ...(opts.email && { email_hash: emailHash(opts.email) }), ...(opts.reason && { reason: opts.reason }) } : null,
       ip_hash: toBytea(sha256(await clientIp())),
     });
     // Falha de auditoria não pode derrubar o login, mas precisa aparecer nos logs do servidor.
