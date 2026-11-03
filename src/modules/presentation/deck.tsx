@@ -175,7 +175,11 @@ export function Deck({
           <button type="button" onClick={() => go(index - 1)} disabled={index === 0} aria-label="Lâmina anterior" className="grid size-11 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 hover:bg-white/20 disabled:opacity-40">
             <ArrowLeft className="size-5" aria-hidden />
           </button>
-          <nav aria-label="Capítulos" className="flex min-w-0 flex-1 gap-1">
+          {/* Celular: só o indicador (alvos de toque pequenos demais); o sumário leva a qualquer capítulo. */}
+          <span aria-hidden className="relative block h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/20 sm:hidden">
+            <span className="absolute inset-y-0 left-0 rounded-full bg-[#8ccbf2]" style={{ width: `${((index + 1) / slides.length) * 100}%` }} />
+          </span>
+          <nav aria-label="Capítulos" className="hidden min-w-0 flex-1 gap-1 sm:flex">
             {groups.map((g) => {
               const done = index >= g.start + g.count;
               const here = index >= g.start && !done;
@@ -188,7 +192,7 @@ export function Deck({
                   aria-label={`Ir para ${g.chapter.title}`}
                   aria-current={here ? "step" : undefined}
                   style={{ flexGrow: g.count }}
-                  className="group flex h-11 min-w-2 basis-0 items-center"
+                  className="group flex h-11 min-w-6 basis-0 items-center"
                 >
                   <span className="relative block h-1.5 w-full overflow-hidden rounded-full bg-white/20 group-hover:bg-white/30">
                     <span className="absolute inset-y-0 left-0 rounded-full bg-[#8ccbf2] transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${pct}%` }} />
