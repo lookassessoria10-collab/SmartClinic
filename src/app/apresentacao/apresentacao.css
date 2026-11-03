@@ -1,0 +1,108 @@
+/* Apresentação pública (/apresentacao). Animações discretas e todas desligadas com "reduzir movimento". */
+
+/* Troca de lâmina: só a lâmina anima, na direção da navegação (View Transitions com tipos). */
+.deck-slide {
+  view-transition-name: deck-slide;
+}
+
+::view-transition-group(deck-slide) {
+  animation-duration: 0.42s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+::view-transition-group(root) {
+  animation-duration: 0.2s;
+}
+
+@keyframes deck-out-left {
+  to { transform: translateX(-6%); opacity: 0; }
+}
+@keyframes deck-in-right {
+  from { transform: translateX(6%); opacity: 0; }
+}
+@keyframes deck-out-right {
+  to { transform: translateX(6%); opacity: 0; }
+}
+@keyframes deck-in-left {
+  from { transform: translateX(-6%); opacity: 0; }
+}
+
+html:active-view-transition-type(forward)::view-transition-old(deck-slide) {
+  animation-name: deck-out-left;
+}
+html:active-view-transition-type(forward)::view-transition-new(deck-slide) {
+  animation-name: deck-in-right;
+}
+html:active-view-transition-type(backward)::view-transition-old(deck-slide) {
+  animation-name: deck-out-right;
+}
+html:active-view-transition-type(backward)::view-transition-new(deck-slide) {
+  animation-name: deck-in-left;
+}
+
+/* Sumário (dialog nativo): a rolagem não vaza para a página por trás. */
+dialog.toc:modal {
+  overscroll-behavior: contain;
+}
+dialog.toc::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgb(1 12 28 / 0.6);
+  backdrop-filter: blur(6px);
+}
+
+/* Cartões "Antes × Com": giro 3D. */
+.flip-inner {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.flip[aria-pressed="true"] .flip-inner {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  backface-visibility: hidden;
+}
+.flip-back {
+  transform: rotateY(180deg);
+}
+
+/* Abertura: órbitas girando devagar e selos flutuando. */
+@keyframes orbit-spin {
+  to { rotate: 360deg; }
+}
+@keyframes chip-float {
+  50% { transform: translateY(-6px); }
+}
+.orbit-ring {
+  animation: orbit-spin linear infinite;
+}
+.float-chip {
+  animation: chip-float 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  .orbit-ring,
+  .float-chip {
+    animation: none;
+  }
+  /* Sem giro: troca de lado só com opacidade. */
+  .flip-inner,
+  .flip[aria-pressed="true"] .flip-inner {
+    transform: none;
+    transition: none;
+  }
+  .flip-back {
+    transform: none;
+    opacity: 0;
+  }
+  .flip[aria-pressed="true"] .flip-back {
+    opacity: 1;
+  }
+  .flip[aria-pressed="true"] .flip-front {
+    opacity: 0;
+  }
+}
