@@ -27,11 +27,11 @@ on conflict do nothing;
 create function app.module_enabled(p_org uuid, p_feature text) returns boolean
 language sql stable security definer
 set search_path = ''
-as $
+as $$
   select coalesce((select f.enabled from public.organization_features f
                    where f.organization_id = p_org and f.feature = p_feature),
                   not exists (select 1 from public.organization_features f where f.organization_id = p_org));
-$;
+$$;
 
 -- Financeiro: tipos e tabelas --------------------------------------------------------------------
 create type public.fin_type as enum ('income', 'expense');
