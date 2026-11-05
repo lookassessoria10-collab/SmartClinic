@@ -25,7 +25,7 @@ export async function saveEntry(slug: string, id: string | null, input: EntryInp
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("save_financial_entry", {
     p_org: ctx.organization.id,
-    p_id: id ?? undefined,
+    p_id: id,
     p_type: v.type,
     p_category: v.categoryId,
     p_description: v.description,
@@ -76,7 +76,7 @@ export async function receiveAppointment(slug: string, input: z.input<typeof rec
   await requireMember(slug);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("receive_appointment", {
-    p_appointment: parsed.data.appointmentId, p_amount_cents: cents, p_paid_at: parsed.data.paidAt, p_method: parsed.data.method ?? undefined,
+    p_appointment: parsed.data.appointmentId, p_amount_cents: cents, p_paid_at: parsed.data.paidAt, p_method: parsed.data.method,
   });
   if (error) return { ok: false, message: dbErrorMessage(error) };
   refresh(slug);
@@ -90,7 +90,7 @@ export async function saveCategory(slug: string, input: z.input<typeof categoryS
   const v = parsed.data;
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("save_financial_category", {
-    p_org: ctx.organization.id, p_id: v.id ?? undefined, p_type: v.type, p_name: v.name, p_active: v.active,
+    p_org: ctx.organization.id, p_id: v.id, p_type: v.type, p_name: v.name, p_active: v.active,
   });
   if (error) return { ok: false, message: dbErrorMessage(error) };
   refresh(slug);

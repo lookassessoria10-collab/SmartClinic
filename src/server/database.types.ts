@@ -455,22 +455,22 @@ isOneToOne: false
 { Args: { "p_modules": string[],"p_org": string }; Returns: undefined
                            },
 "save_financial_entry":
-{ Args: { "p_amount_cents": number,"p_category": string,"p_count"?: number,"p_description": string,"p_due_date": string,"p_id"?: string,"p_method"?: string,"p_notes"?: string,"p_org": string,"p_paid_at"?: string,"p_patient"?: string,"p_professional"?: string,"p_repeat"?: string,"p_type": Database["public"]['Enums']["fin_type"] }; Returns: string
+{ Args: { "p_amount_cents": number,"p_category": string,"p_count"?: number,"p_description": string,"p_due_date": string,"p_id": string | null,"p_method"?: string,"p_notes"?: string,"p_org": string,"p_paid_at"?: string,"p_patient"?: string,"p_professional"?: string,"p_repeat"?: string,"p_type": Database["public"]['Enums']["fin_type"] }; Returns: string
                            },
 "set_financial_entry_status":
 { Args: { "p_following"?: boolean,"p_id": string,"p_method"?: string,"p_paid_at"?: string,"p_status": Database["public"]['Enums']["fin_status"] }; Returns: number
                            },
 "receive_appointment":
-{ Args: { "p_amount_cents": number,"p_appointment": string,"p_method"?: string,"p_paid_at"?: string }; Returns: string
+{ Args: { "p_amount_cents": number,"p_appointment": string,"p_method": string | null,"p_paid_at": string | null }; Returns: string
                            },
 "save_financial_category":
-{ Args: { "p_active"?: boolean,"p_id"?: string,"p_name": string,"p_org": string,"p_type": Database["public"]['Enums']["fin_type"] }; Returns: string
+{ Args: { "p_active"?: boolean,"p_id": string | null,"p_name": string,"p_org": string,"p_type": Database["public"]['Enums']["fin_type"] }; Returns: string
                            },
 "finance_report":
 { Args: { "p_from": string,"p_org": string,"p_to": string }; Returns: Json
                            },
 "save_proposal":
-{ Args: { "p_id"?: string,"p_items": Json,"p_org": string,"p_patient": string,"p_professional"?: string,"p_title": string,"p_valid_until"?: string }; Returns: string
+{ Args: { "p_id": string | null,"p_items": Json,"p_org": string,"p_patient": string,"p_professional": string | null,"p_title": string,"p_valid_until": string | null }; Returns: string
                            },
 "set_proposal_status":
 { Args: { "p_id": string,"p_status": Database["public"]['Enums']["proposal_status"] }; Returns: undefined
@@ -488,13 +488,13 @@ isOneToOne: false
 { Args: { "p_id": string,"p_note"?: string,"p_outcome": string }; Returns: undefined
                            },
 "opportunity_assign":
-{ Args: { "p_id": string,"p_user"?: string }; Returns: undefined
+{ Args: { "p_id": string,"p_user": string | null }; Returns: undefined
                            },
 "opportunity_record_booking":
 { Args: { "p_appointment": string,"p_id": string }; Returns: boolean
                            },
 "book_from_waiting_list":
-{ Args: { "p_entry": string,"p_opportunity"?: string,"p_professional": string,"p_service"?: string,"p_starts_at": string }; Returns: string
+{ Args: { "p_entry": string,"p_opportunity"?: string,"p_professional": string,"p_service": string,"p_starts_at": string }; Returns: string
                            },
 "save_opportunity_settings":
 { Args: { "p_enabled": Database["public"]['Enums']["opportunity_kind"][],"p_excluded": string[],"p_horizon_days": number,"p_lead_days": number,"p_org": string,"p_priorities": Json,"p_professionals_see_own": boolean,"p_reception_sees_values": boolean,"p_stale_days": number }; Returns: undefined

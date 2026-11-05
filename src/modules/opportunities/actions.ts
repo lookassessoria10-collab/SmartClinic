@@ -71,7 +71,7 @@ export async function assignOpportunity(slug: string, input: z.input<typeof assi
   if (!parsed.success) return invalid;
   await requireMember(slug);
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("opportunity_assign", { p_id: parsed.data.id, p_user: parsed.data.userId ?? undefined });
+  const { error } = await supabase.rpc("opportunity_assign", { p_id: parsed.data.id, p_user: parsed.data.userId });
   if (error) return { ok: false, message: dbErrorMessage(error) };
   refresh(slug);
   return { ok: true };
@@ -172,11 +172,11 @@ export async function saveProposal(slug: string, id: string | null, input: Propo
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("save_proposal", {
     p_org: ctx.organization.id,
-    p_id: id ?? undefined,
+    p_id: id,
     p_patient: v.patientId,
-    p_professional: v.professionalId ?? undefined,
+    p_professional: v.professionalId,
     p_title: v.title,
-    p_valid_until: v.validUntil ?? undefined,
+    p_valid_until: v.validUntil,
     p_items: v.items.map((i) => ({ service_id: i.serviceId, description: i.description, quantity: i.quantity, unit_price_cents: i.unitPriceCents })),
   });
   if (error) return { ok: false, message: dbErrorMessage(error) };

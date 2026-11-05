@@ -52,6 +52,10 @@ test.describe("apresentação pública", () => {
     await expect(card).toHaveAttribute("aria-pressed", "true");
 
     const quiz = page.getByRole("region", { name: "Você já entendeu as regras?" });
+    await quiz.getByRole("radio", { name: /Só Início, Financeiro e Gestão/ }).check();
+    await quiz.getByRole("button", { name: "Confirmar" }).click();
+    await expect(quiz.getByText("Isso!")).toBeVisible();
+    await quiz.getByRole("button", { name: "Próxima pergunta" }).click();
     await quiz.getByRole("radio", { name: /Só uma consegue/ }).check();
     await quiz.getByRole("button", { name: "Confirmar" }).click();
     await expect(quiz.getByText("Isso!")).toBeVisible();
