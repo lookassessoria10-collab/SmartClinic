@@ -28,7 +28,7 @@ describe("slugProblem", () => {
 describe("onboardingSchema", () => {
   const valid = {
     name: "Clínica Teste", slug: "clinica-teste", segment: "dental_clinic", size: "2 a 5",
-    services: ["Avaliação"], need: "schedule", attends: true, specialty: "Dentista",
+    services: ["Avaliação"], modules: ["schedule", "finance"], attends: true, specialty: "Dentista",
   };
 
   it("aceita um onboarding completo", () => {
@@ -39,7 +39,17 @@ describe("onboardingSchema", () => {
     expect(onboardingSchema.safeParse({ ...valid, segment: "hospital" }).success).toBe(false);
   });
 
-  it("exige ao menos um serviço", () => {
+  it("com Agenda, exige ao menos um serviço", () => {
     expect(onboardingSchema.safeParse({ ...valid, services: [] }).success).toBe(false);
+  });
+
+  it("só Financeiro: não pede equipe nem serviços", () => {
+    const onlyFinance = { name: valid.name, slug: valid.slug, segment: valid.segment, modules: ["finance"] };
+    expect(onboardingSchema.safeParse(onlyFinance).success).toBe(true);
+  });
+
+  it("exige ao menos um módulo e Oportunidades só com Agenda", () => {
+    expect(onboardingSchema.safeParse({ ...valid, modules: [] }).success).toBe(false);
+    expect(onboardingSchema.safeParse({ ...valid, modules: ["opportunities", "finance"] }).success).toBe(false);
   });
 });

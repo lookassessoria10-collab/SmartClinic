@@ -82,8 +82,15 @@ export async function freshTotp(secret: string) {
 /**
  * Cria conta e conclui o onboarding. Devolve o slug criado. Sem confirmação obrigatória
  * (padrão) o cadastro já entra; com AUTH_EMAIL_CONFIRMATION=required, confirma pelo e-mail.
+ * Módulos (0016): por padrão, todos; sem Agenda, os passos de equipe e serviços não aparecem.
  */
-export async function signUpWithClinic(page: Page, opts: { name: string; email: string; password: string; clinic: string }) {
+export const MODULE_LABEL = { schedule: "Agenda e pacientes", opportunities: "Oportunidades", finance: "Financeiro" } as const;
+
+export async function signUpWithClinic(
+  page: Page,
+  opts: { name: string; email: string; password: string; clinic: string; modules?: (keyof typeof MODULE_LABEL)[] },
+) {
+  const modules = opts.modules ?? ["schedule", "opportunities", "finance"];
   await page.goto("/cadastro");
   await page.getByLabel("Seu nome completo").fill(opts.name);
   await page.getByLabel("E-mail").fill(opts.email);
@@ -104,12 +111,20 @@ export async function signUpWithClinic(page: Page, opts: { name: string; email: 
   const slug = await page.getByLabel("Endereço da página de agendamento").inputValue();
   await page.getByRole("radio", { name: /Clínica de estética/ }).click();
   await page.getByRole("button", { name: "Continuar" }).click();
-  await page.getByRole("radio", { name: /^2 a 5/ }).click();
-  await page.getByRole("radio", { name: /Sim, eu atendo/ }).click();
+
+  // Agenda antes de Oportunidades (que depende dela).
+  for (const m of (["schedule", "opportunities", "finance"] as const).filter((x) => modules.includes(x))) {
+    await page.getByText(MODULE_LABEL[m], { exact: true }).click();
+    await expect(page.getByRole("checkbox", { name: new RegExp(`^${MODULE_LABEL[m]}`) })).toBeChecked();
+  }
   await page.getByRole("button", { name: "Continuar" }).click();
-  await page.getByRole("button", { name: "Continuar" }).click(); // serviços sugeridos
-  await page.getByRole("radio", { name: /Organizar a agenda/ }).click();
-  await page.getByRole("button", { name: "Continuar" }).click();
+
+  if (modules.includes("schedule")) {
+    await page.getByRole("radio", { name: /^2 a 5/ }).click();
+    await page.getByRole("radio", { name: /Sim, eu atendo/ }).click();
+    await page.getByRole("button", { name: "Continuar" }).click();
+    await page.getByRole("button", { name: "Continuar" }).click(); // serviços sugeridos
+  }
   await page.getByRole("button", { name: "Começar a usar" }).click();
   await expect(page).toHaveURL(new RegExp(`/c/${slug}/inicio`));
   return slug;

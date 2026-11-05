@@ -2,29 +2,35 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Building2, ChevronRight, Clock, Globe, ScrollText, Sparkles, Stethoscope, Tags, Upload, UsersRound, CreditCard, type LucideIcon } from "lucide-react";
+import { Building2, ChevronRight, Clock, Globe, LayoutGrid, ScrollText, Sparkles, Stethoscope, Tags, Upload, UsersRound, CreditCard, type LucideIcon } from "lucide-react";
 import { useDb } from "@/modules/clinic/client";
 import { Card, PageHeader } from "@/ui/primitives";
 import { Badge } from "@/ui/status-badge";
+import type { ModuleKey } from "@/prototype/types";
 
-const AREAS: { icon: LucideIcon; title: string; description: string; path?: string; count?: (db: ReturnType<typeof useDb>) => string }[] = [
+// Áreas de um módulo desligado somem (0016); Módulos fica sempre.
+const AREAS: { icon: LucideIcon; title: string; description: string; path?: string; module?: ModuleKey; count?: (db: ReturnType<typeof useDb>) => string }[] = [
   { icon: Building2, title: "Clínica", description: "Nome, telefone e endereço da página de agendamento", path: "clinica" },
+  {
+    icon: LayoutGrid, title: "Módulos", description: "Agenda, Oportunidades e Financeiro: ligue só o que a clínica usa", path: "modulos",
+    count: (db) => `${db.org.features.length} de 3 ligados`,
+  },
   {
     icon: Stethoscope, title: "Profissionais", description: "Quem atende, especialidade e serviços de cada um", path: "profissionais",
     count: (db) => `${db.professionals.filter((p) => p.active).length} ativo(s)`,
   },
   {
-    icon: Tags, title: "Serviços", description: "Duração, intervalo, preço e quem realiza", path: "servicos",
+    icon: Tags, title: "Serviços", description: "Duração, intervalo, preço e quem realiza", path: "servicos", module: "schedule",
     count: (db) => `${db.services.filter((s) => s.active).length} ativo(s)`,
   },
-  { icon: Clock, title: "Horários", description: "Horário de atendimento, feriados, férias e bloqueios", path: "horarios" },
+  { icon: Clock, title: "Horários", description: "Horário de atendimento, feriados, férias e bloqueios", path: "horarios", module: "schedule" },
   { icon: UsersRound, title: "Equipe", description: "Membros, papéis e convites", path: "equipe" },
   {
-    icon: Sparkles, title: "Oportunidades", description: "O que acompanhar, prazos e quem vê valores", path: "oportunidades",
+    icon: Sparkles, title: "Oportunidades", description: "O que acompanhar, prazos e quem vê valores", path: "oportunidades", module: "opportunities",
     count: (db) => `${db.opportunitySettings.enabledKinds.length} de 6 tipos ativos`,
   },
   { icon: ScrollText, title: "Auditoria", description: "Quem fez o quê e quando", path: "auditoria" },
-  { icon: Globe, title: "Agendamento online", description: "Link público para o paciente pedir horário" },
+  { icon: Globe, title: "Agendamento online", description: "Link público para o paciente pedir horário", module: "schedule" },
   { icon: Upload, title: "Importar e exportar", description: "Planilhas CSV e XLSX" },
   { icon: CreditCard, title: "Assinatura", description: "Plano e limites" },
 ];
@@ -37,7 +43,7 @@ export default function GestaoPage() {
       <PageHeader title="Gestão" description="Configurações da clínica. Tudo que o onboarding sugeriu pode ser alterado aqui." />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {AREAS.map((a) => {
+        {AREAS.filter((a) => !a.module || db.org.features.includes(a.module)).map((a) => {
           const body = (
             <>
               <span className="grid size-10 shrink-0 place-items-center rounded-sm bg-accent-subtle text-accent">

@@ -2,13 +2,14 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   AlarmClock, BadgeCheck, Ban, Building2, CalendarClock, CalendarCog, CalendarDays, CalendarRange, CalendarX2, CircleDollarSign,
-  ClipboardList, Clock, FileSpreadsheet, Globe, HeartPulse, KeyRound, ListChecks, Lock, LogIn, MailPlus, MessageSquareOff,
+  ClipboardList, Clock, FileSpreadsheet, LayoutGrid, Globe, HeartPulse, KeyRound, ListChecks, Lock, LogIn, MailPlus, MessageSquareOff,
   Palette, Receipt, Repeat, Rocket, Search, ShieldCheck, Smile, Sparkles, Stethoscope, Tags, Timer, UserPlus, UserX, Users,
   Wallet, type LucideIcon,
 } from "lucide-react";
 import { BrandMark, Wordmark } from "@/ui/brand";
 import { cn } from "@/lib/cn";
 import { Bullets, Eyebrow, FeatureCard, Hl, Lead, SlideTitle, Split, Stat, Steps } from "./layouts";
+import { MockFinanceEntries, MockFinanceReport } from "./mockups-finance";
 import {
   MockAudit, MockBooking, MockHistory, MockHomes, MockOpportunities, MockOpportunityCard, MockPermissions, MockStatusFlow,
   MockWeek, SecurityBadges,
@@ -40,9 +41,10 @@ export const CHAPTERS: Chapter[] = [
   { n: 3, title: "Agenda", subtitle: "Agendar, remarcar, horários e bloqueios" },
   { n: 4, title: "Pacientes & cadastros", subtitle: "Pacientes, profissionais e serviços" },
   { n: 5, title: "Oportunidades", subtitle: "Horários livres, retornos, orçamentos" },
-  { n: 6, title: "Perfis & permissões", subtitle: "Quem vê o quê" },
-  { n: 7, title: "Segurança & privacidade", subtitle: "Isolamento, acesso e auditoria" },
-  { n: 8, title: "Começando", subtitle: "Rotina, próximos passos e acesso" },
+  { n: 6, title: "Financeiro", subtitle: "Lançamentos, recebimentos e relatório" },
+  { n: 7, title: "Perfis & permissões", subtitle: "Quem vê o quê" },
+  { n: 8, title: "Segurança & privacidade", subtitle: "Isolamento, acesso e auditoria" },
+  { n: 9, title: "Começando", subtitle: "Rotina, próximos passos e acesso" },
 ];
 
 export interface SlideContext {
@@ -195,6 +197,7 @@ export const SLIDES: Slide[] = [
                 <><strong className="text-ink">Agenda</strong> por profissional, sem conflito de horário.</>,
                 <><strong className="text-ink">Pacientes</strong> com histórico e sem cadastro duplicado.</>,
                 <><strong className="text-ink">Oportunidades</strong>: horários livres, retornos e orçamentos que pedem ação.</>,
+                <><strong className="text-ink">Financeiro</strong>: receitas, despesas e relatório do período.</>,
                 <><strong className="text-ink">Equipe</strong> com papéis e permissões de verdade.</>,
               ]}
             />
@@ -265,7 +268,7 @@ export const SLIDES: Slide[] = [
     ),
   },
   {
-    id: "onboarding", chapter: 2, title: "Onboarding em 4 perguntas", keywords: "onboarding perguntas sugestões serviços", profiles: ["gestao"],
+    id: "onboarding", chapter: 2, title: "Onboarding em poucas perguntas", keywords: "onboarding perguntas sugestões serviços módulos", profiles: ["gestao"],
     render: () => (
       <Split
         text={
@@ -281,9 +284,9 @@ export const SLIDES: Slide[] = [
           <div className="flex flex-col gap-2">
             {[
               ["Tipo de estabelecimento", "Clínica de estética"],
-              ["Tamanho da equipe", "2 a 5 pessoas"],
-              ["Você também atende?", "Sim, eu atendo"],
-              ["O que resolver primeiro", "Organizar a agenda"],
+              ["Módulos", "Agenda, Oportunidades e Financeiro"],
+              ["Tamanho da equipe (com Agenda)", "2 a 5 pessoas"],
+              ["Serviços (com Agenda)", "Avaliação, limpeza de pele…"],
             ].map(([q, a], i) => (
               <div key={q} className="flex items-center gap-3 rounded-[16px] border border-line bg-surface p-3 shadow-sm">
                 <span className="tabular grid size-8 shrink-0 place-items-center rounded-full bg-accent text-body-sm font-semibold text-white">{i + 1}</span>
@@ -294,11 +297,36 @@ export const SLIDES: Slide[] = [
               </div>
             ))}
             <p className="rounded-[16px] bg-accent-subtle p-3 text-body-sm text-accent">
-              Resultado: serviços sugeridos para o segmento + horário de atendimento inicial.
+              Resultado: só os módulos escolhidos no menu; com Agenda, serviços sugeridos e horário inicial.
             </p>
           </div>
         }
       />
+    ),
+  },
+  {
+    id: "modulos", chapter: 2, title: "Use só o que precisa", keywords: "módulos escolher agenda financeiro oportunidades ligar desligar", profiles: ["gestao"],
+    render: () => (
+      <div className="flex h-full flex-col justify-center gap-6">
+        <div className="flex flex-col gap-3">
+          <Eyebrow>Módulos</Eyebrow>
+          <SlideTitle>
+            Use só <Hl>o que precisa</Hl>
+          </SlideTitle>
+          <Lead>
+            No cadastro, a clínica escolhe os módulos. Quem só quer controlar o financeiro vê Início, Financeiro e Gestão — nada de agenda pela frente. Dá para
+            ligar e desligar depois em Gestão → Módulos, sem perder dados.
+          </Lead>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <FeatureCard icon={CalendarDays} title="Agenda e pacientes">Agenda por profissional, horários, bloqueios e cadastro de pacientes.</FeatureCard>
+          <FeatureCard icon={Sparkles} title="Oportunidades">Horários livres, lista de espera, retornos e orçamentos. Precisa da Agenda.</FeatureCard>
+          <FeatureCard icon={Wallet} title="Financeiro">Receitas, despesas, contas a pagar e a receber, e relatório.</FeatureCard>
+        </div>
+        <p className="flex items-center gap-2 text-body-sm text-ink-2">
+          <LayoutGrid className="size-4 text-accent" aria-hidden /> Gestão → Módulos
+        </p>
+      </div>
     ),
   },
   {
@@ -709,7 +737,7 @@ export const SLIDES: Slide[] = [
           <Lead>Nada é somado com o que não é da mesma natureza. E só quem pode ver valores recebe os valores.</Lead>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <FeatureCard icon={BadgeCheck} title="Realizada">Atendimentos concluídos (estimativa pelo preço, até o Financeiro chegar).</FeatureCard>
+          <FeatureCard icon={BadgeCheck} title="Realizada">O que foi recebido no Financeiro (sem o módulo, estimativa pelo preço dos serviços).</FeatureCard>
           <FeatureCard icon={CalendarDays} title="Prevista">Agendamentos confirmados até o fim do mês.</FeatureCard>
           <FeatureCard icon={Wallet} title="Potencial em risco">Horários livres e liberados nos próximos dias.</FeatureCard>
           <FeatureCard icon={CircleDollarSign} title="Orçamentos">À parte: nem receita garantida, nem perdida.</FeatureCard>
@@ -757,9 +785,83 @@ export const SLIDES: Slide[] = [
     ),
   },
 
-  /* ---------- 6. Perfis & permissões ---------- */
+  /* ---------- 6. Financeiro ---------- */
   {
-    id: "permissoes", chapter: 6, title: "Cada perfil vê o que precisa", keywords: "permissões perfis gestão recepção profissional acesso", profiles: ALL,
+    id: "financeiro", chapter: 6, title: "Financeiro sem planilha", keywords: "financeiro lançamentos receitas despesas contas pagar receber parcelas", profiles: ["gestao", "recepcao"],
+    render: () => (
+      <Split
+        text={
+          <>
+            <Eyebrow>Financeiro</Eyebrow>
+            <SlideTitle>
+              Contas da clínica <Hl>sem planilha</Hl>
+            </SlideTitle>
+            <Bullets
+              items={[
+                "Receitas e despesas com categoria, vencimento e forma de pagamento.",
+                "Pendente, pago ou atrasado — o atraso aparece sozinho.",
+                "Repetir todo mês (aluguel, internet) ou parcelar em várias vezes.",
+                "Cancelar não apaga: o lançamento fica no histórico e sai dos totais.",
+              ]}
+            />
+          </>
+        }
+        visual={<MockFinanceEntries />}
+      />
+    ),
+  },
+  {
+    id: "recebimento", chapter: 6, title: "Recebimento direto do atendimento", keywords: "recebimento atendimento receber pagamento profissional", profiles: ["gestao", "recepcao"],
+    render: () => (
+      <div className="flex h-full flex-col justify-center gap-6">
+        <div className="flex flex-col gap-3">
+          <Eyebrow>Agenda + Financeiro</Eyebrow>
+          <SlideTitle>
+            Atendeu? <Hl>Registre o recebimento ali mesmo</Hl>
+          </SlideTitle>
+          <Lead>Com a Agenda e o Financeiro ligados, o atendimento vira receita em um clique — com o preço do serviço já preenchido.</Lead>
+        </div>
+        <Steps
+          steps={[
+            { title: "Atendimento concluído", text: "Na agenda, abra o atendimento." },
+            { title: "Registrar recebimento", text: "Valor do serviço, data e forma de pagamento (Pix, cartão…)." },
+            { title: "Receita ligada", text: "Ao paciente, ao profissional e ao atendimento — uma vez só, sem duplicar." },
+            { title: "No relatório", text: "Recebimentos por profissional e por forma de pagamento." },
+          ]}
+        />
+      </div>
+    ),
+  },
+  {
+    id: "relatorio", chapter: 6, title: "Relatório do período", keywords: "relatório resultado realizado previsto atraso categoria exportar csv imprimir", profiles: ["gestao"],
+    render: () => (
+      <Split
+        reverse
+        text={
+          <>
+            <Eyebrow>Relatório</Eyebrow>
+            <SlideTitle>
+              O mês inteiro <Hl>em uma tela</Hl>
+            </SlideTitle>
+            <Bullets
+              items={[
+                "Recebido, pago e resultado; o que ainda está para receber e pagar.",
+                "Contas em atraso destacadas.",
+                "Por categoria, forma de pagamento, profissional e mês a mês.",
+                "Exporta em CSV (abre no Excel) e imprime.",
+                "Totais e relatório só para a gestão; a recepção lança e recebe receitas.",
+              ]}
+            />
+          </>
+        }
+        visual={<MockFinanceReport />}
+      />
+    ),
+  },
+
+  /* ---------- 7. Perfis & permissões ---------- */
+  {
+    id: "permissoes", chapter: 7, title: "Cada perfil vê o que precisa", keywords: "permissões perfis gestão recepção profissional acesso", profiles: ALL,
     render: () => (
       <div className="flex h-full flex-col justify-center gap-6">
         <div className="flex flex-col gap-3">
@@ -774,7 +876,7 @@ export const SLIDES: Slide[] = [
     ),
   },
   {
-    id: "inicio-perfil", chapter: 6, title: "Um Início para cada um", keywords: "início tela inicial perfil", profiles: ALL,
+    id: "inicio-perfil", chapter: 7, title: "Um Início para cada um", keywords: "início tela inicial perfil", profiles: ALL,
     render: () => (
       <div className="flex h-full flex-col justify-center gap-6">
         <div className="flex flex-col gap-3">
@@ -788,9 +890,9 @@ export const SLIDES: Slide[] = [
     ),
   },
 
-  /* ---------- 7. Segurança & privacidade ---------- */
+  /* ---------- 8. Segurança & privacidade ---------- */
   {
-    id: "isolamento", chapter: 7, title: "Cada clínica isolada", keywords: "segurança isolamento multiempresa rls", profiles: ["gestao"], dark: true,
+    id: "isolamento", chapter: 8, title: "Cada clínica isolada", keywords: "segurança isolamento multiempresa rls", profiles: ["gestao"], dark: true,
     render: () => (
       <div className="relative flex h-full flex-col justify-center gap-6">
         <Decor rings />
@@ -811,7 +913,7 @@ export const SLIDES: Slide[] = [
     ),
   },
   {
-    id: "acesso", chapter: 7, title: "Acesso protegido", keywords: "senha mfa duas etapas bloqueio tentativas", profiles: ALL,
+    id: "acesso", chapter: 8, title: "Acesso protegido", keywords: "senha mfa duas etapas bloqueio tentativas", profiles: ALL,
     render: () => (
       <div className="flex h-full flex-col justify-center gap-6">
         <div className="flex flex-col gap-3">
@@ -830,7 +932,7 @@ export const SLIDES: Slide[] = [
     ),
   },
   {
-    id: "auditoria", chapter: 7, title: "Tudo registrado", keywords: "auditoria registro histórico quem fez", profiles: ["gestao"],
+    id: "auditoria", chapter: 8, title: "Tudo registrado", keywords: "auditoria registro histórico quem fez", profiles: ["gestao"],
     render: () => (
       <Split
         text={
@@ -854,9 +956,9 @@ export const SLIDES: Slide[] = [
     ),
   },
 
-  /* ---------- 8. Começando ---------- */
+  /* ---------- 9. Começando ---------- */
   {
-    id: "rotina", chapter: 8, title: "Uma rotina simples", keywords: "rotina dia a dia começar uso", profiles: ALL,
+    id: "rotina", chapter: 9, title: "Uma rotina simples", keywords: "rotina dia a dia começar uso", profiles: ALL,
     render: () => (
       <div className="flex h-full flex-col justify-center gap-6">
         <div className="flex flex-col gap-3">
@@ -877,7 +979,7 @@ export const SLIDES: Slide[] = [
     ),
   },
   {
-    id: "em-breve", chapter: 8, title: "O que vem por aí", keywords: "em breve próximos agendamento online financeiro importação", profiles: ALL,
+    id: "em-breve", chapter: 9, title: "O que vem por aí", keywords: "em breve próximos agendamento online importação unidades", profiles: ALL,
     render: () => (
       <div className="flex h-full flex-col justify-center gap-6">
         <div className="flex flex-col gap-3">
@@ -889,14 +991,14 @@ export const SLIDES: Slide[] = [
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           <FeatureCard icon={Globe} title="Agendamento online">Página pública da clínica: o paciente pede, a equipe aprova.</FeatureCard>
-          <FeatureCard icon={Wallet} title="Financeiro">Recebimentos e despesas, ligados aos atendimentos.</FeatureCard>
+          <FeatureCard icon={Building2} title="Várias unidades">Agenda e financeiro por unidade, para quem tem mais de um endereço.</FeatureCard>
           <FeatureCard icon={FileSpreadsheet} title="Importar e exportar">Trazer pacientes de planilhas e levar os dados quando quiser.</FeatureCard>
         </div>
       </div>
     ),
   },
   {
-    id: "encerramento", chapter: 8, title: "Pronto para começar?", keywords: "acessar entrar criar conta fim", profiles: ALL, dark: true,
+    id: "encerramento", chapter: 9, title: "Pronto para começar?", keywords: "acessar entrar criar conta fim", profiles: ALL, dark: true,
     render: () => (
       <div className="relative flex h-full flex-col items-start justify-center gap-6">
         <Decor rings />
@@ -927,5 +1029,5 @@ export const minutesFor = (n: number) => Math.max(1, Math.round(n * 0.5));
 export const slidesInChapter = (n: number) => SLIDES.filter((s) => s.chapter === n).length;
 // Ícone de capítulo para o índice da página inicial.
 export const CHAPTER_ICON: Record<number, LucideIcon> = {
-  0: Sparkles, 1: ClipboardList, 2: Rocket, 3: CalendarDays, 4: Users, 5: Sparkles, 6: KeyRound, 7: ShieldCheck, 8: LogIn,
+  0: Sparkles, 1: ClipboardList, 2: Rocket, 3: CalendarDays, 4: Users, 5: Sparkles, 6: Wallet, 7: KeyRound, 8: ShieldCheck, 9: LogIn,
 };

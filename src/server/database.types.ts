@@ -343,6 +343,48 @@ isOneToOne: false
                   Relationships: [
 
                   ]
+                },"organization_features": {
+                  Row: {
+                    "enabled": boolean,"feature": string,"organization_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    [_ in never]: never
+                  }
+                  Update: {
+                    [_ in never]: never
+                  }
+                  Relationships: [
+
+                  ]
+                },"financial_categories": {
+                  Row: {
+                    "active": boolean,"created_at": string,"id": string,"name": string,"organization_id": string,"position": number,"type": Database["public"]['Enums']["fin_type"]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    [_ in never]: never
+                  }
+                  Update: {
+                    [_ in never]: never
+                  }
+                  Relationships: [
+
+                  ]
+                },"financial_entries": {
+                  Row: {
+                    "amount_cents": number,"appointment_id": string | null,"cancelled_at": string | null,"category_id": string,"created_at": string,"created_by": string | null,"description": string,"due_date": string,"id": string,"installment": number | null,"installments": number | null,"notes": string | null,"organization_id": string,"paid_at": string | null,"patient_id": string | null,"payment_method": string | null,"professional_id": string | null,"repeat_kind": string | null,"series_id": string | null,"status": Database["public"]['Enums']["fin_status"],"type": Database["public"]['Enums']["fin_type"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    [_ in never]: never
+                  }
+                  Update: {
+                    [_ in never]: never
+                  }
+                  Relationships: [
+
+                  ]
                 }
           }
           Views: {
@@ -362,7 +404,7 @@ isOneToOne: false
 { Args: { "p_email": string,"p_org": string,"p_role": Database["public"]['Enums']["member_role"] }; Returns: string
                            },
 "create_organization":
-{ Args: { "p_attends"?: boolean,"p_name": string,"p_onboarding"?: Json,"p_segment": Database["public"]['Enums']["org_segment"],"p_slug": string,"p_specialty"?: string,"p_timezone"?: string }; Returns: string
+{ Args: { "p_attends"?: boolean,"p_name": string,"p_onboarding"?: Json,"p_segment": Database["public"]['Enums']["org_segment"],"p_modules"?: string[],"p_slug": string,"p_specialty"?: string,"p_timezone"?: string }; Returns: string
                            },
 "get_my_invitation":
 { Args: { "p_token": string }; Returns: {
@@ -409,8 +451,26 @@ isOneToOne: false
 "login_throttled":
 { Args: { "p_email": string,"p_ip_hash": string }; Returns: boolean
                            },
+"set_organization_modules":
+{ Args: { "p_modules": string[],"p_org": string }; Returns: undefined
+                           },
+"save_financial_entry":
+{ Args: { "p_amount_cents": number,"p_category": string,"p_count"?: number,"p_description": string,"p_due_date": string,"p_id": string | null,"p_method"?: string,"p_notes"?: string,"p_org": string,"p_paid_at"?: string,"p_patient"?: string,"p_professional"?: string,"p_repeat"?: string,"p_type": Database["public"]['Enums']["fin_type"] }; Returns: string
+                           },
+"set_financial_entry_status":
+{ Args: { "p_following"?: boolean,"p_id": string,"p_method"?: string,"p_paid_at"?: string,"p_status": Database["public"]['Enums']["fin_status"] }; Returns: number
+                           },
+"receive_appointment":
+{ Args: { "p_amount_cents": number,"p_appointment": string,"p_method": string | null,"p_paid_at": string | null }; Returns: string
+                           },
+"save_financial_category":
+{ Args: { "p_active"?: boolean,"p_id": string | null,"p_name": string,"p_org": string,"p_type": Database["public"]['Enums']["fin_type"] }; Returns: string
+                           },
+"finance_report":
+{ Args: { "p_from": string,"p_org": string,"p_to": string }; Returns: Json
+                           },
 "save_proposal":
-{ Args: { "p_id"?: string,"p_items": Json,"p_org": string,"p_patient": string,"p_professional"?: string,"p_title": string,"p_valid_until"?: string }; Returns: string
+{ Args: { "p_id": string | null,"p_items": Json,"p_org": string,"p_patient": string,"p_professional": string | null,"p_title": string,"p_valid_until": string | null }; Returns: string
                            },
 "set_proposal_status":
 { Args: { "p_id": string,"p_status": Database["public"]['Enums']["proposal_status"] }; Returns: undefined
@@ -428,20 +488,20 @@ isOneToOne: false
 { Args: { "p_id": string,"p_note"?: string,"p_outcome": string }; Returns: undefined
                            },
 "opportunity_assign":
-{ Args: { "p_id": string,"p_user"?: string }; Returns: undefined
+{ Args: { "p_id": string,"p_user": string | null }; Returns: undefined
                            },
 "opportunity_record_booking":
 { Args: { "p_appointment": string,"p_id": string }; Returns: boolean
                            },
 "book_from_waiting_list":
-{ Args: { "p_entry": string,"p_opportunity"?: string,"p_professional": string,"p_service"?: string,"p_starts_at": string }; Returns: string
+{ Args: { "p_entry": string,"p_opportunity"?: string,"p_professional": string,"p_service": string,"p_starts_at": string }; Returns: string
                            },
 "save_opportunity_settings":
 { Args: { "p_enabled": Database["public"]['Enums']["opportunity_kind"][],"p_excluded": string[],"p_horizon_days": number,"p_lead_days": number,"p_org": string,"p_priorities": Json,"p_professionals_see_own": boolean,"p_reception_sees_values": boolean,"p_stale_days": number }; Returns: undefined
                            }
           }
           Enums: {
-            "appointment_origin": "staff"|"public"|"import"|"integration","appointment_status": "requested"|"confirmed"|"declined"|"expired"|"cancelled"|"no_show"|"completed","block_kind": "break"|"time_off"|"vacation"|"holiday"|"other","member_role": "manager"|"reception"|"professional","member_status": "invited"|"active"|"disabled","org_segment": "medical_clinic"|"medical_office"|"dental_clinic"|"dental_office"|"aesthetic_clinic"|"aesthetic_office"|"multidisciplinary"|"other","org_status": "trial"|"active"|"suspended"|"cancelled","waiting_status": "waiting"|"booked"|"removed","follow_up_status": "pending"|"scheduled"|"done"|"cancelled","proposal_status": "open"|"accepted"|"declined"|"cancelled"|"expired","opportunity_kind": "free_slots"|"cancelled_slot"|"follow_up_due"|"proposal_stale"|"no_show"|"cancelled_appointment","opportunity_status": "new"|"in_progress"|"resolved"|"dismissed"|"expired"
+            "appointment_origin": "staff"|"public"|"import"|"integration","appointment_status": "requested"|"confirmed"|"declined"|"expired"|"cancelled"|"no_show"|"completed","block_kind": "break"|"time_off"|"vacation"|"holiday"|"other","member_role": "manager"|"reception"|"professional","member_status": "invited"|"active"|"disabled","org_segment": "medical_clinic"|"medical_office"|"dental_clinic"|"dental_office"|"aesthetic_clinic"|"aesthetic_office"|"multidisciplinary"|"other","org_status": "trial"|"active"|"suspended"|"cancelled","waiting_status": "waiting"|"booked"|"removed","follow_up_status": "pending"|"scheduled"|"done"|"cancelled","proposal_status": "open"|"accepted"|"declined"|"cancelled"|"expired","opportunity_kind": "free_slots"|"cancelled_slot"|"follow_up_due"|"proposal_stale"|"no_show"|"cancelled_appointment","opportunity_status": "new"|"in_progress"|"resolved"|"dismissed"|"expired","fin_type": "income"|"expense","fin_status": "pending"|"paid"|"cancelled"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -557,7 +617,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "appointment_origin": ["staff", "public", "import", "integration"],"appointment_status": ["requested", "confirmed", "declined", "expired", "cancelled", "no_show", "completed"],"block_kind": ["break", "time_off", "vacation", "holiday", "other"],"member_role": ["manager", "reception", "professional"],"member_status": ["invited", "active", "disabled"],"org_segment": ["medical_clinic", "medical_office", "dental_clinic", "dental_office", "aesthetic_clinic", "aesthetic_office", "multidisciplinary", "other"],"org_status": ["trial", "active", "suspended", "cancelled"],"waiting_status": ["waiting", "booked", "removed"],"follow_up_status": ["pending", "scheduled", "done", "cancelled"],"proposal_status": ["open", "accepted", "declined", "cancelled", "expired"],"opportunity_kind": ["free_slots", "cancelled_slot", "follow_up_due", "proposal_stale", "no_show", "cancelled_appointment"],"opportunity_status": ["new", "in_progress", "resolved", "dismissed", "expired"]
+            "appointment_origin": ["staff", "public", "import", "integration"],"appointment_status": ["requested", "confirmed", "declined", "expired", "cancelled", "no_show", "completed"],"block_kind": ["break", "time_off", "vacation", "holiday", "other"],"member_role": ["manager", "reception", "professional"],"member_status": ["invited", "active", "disabled"],"org_segment": ["medical_clinic", "medical_office", "dental_clinic", "dental_office", "aesthetic_clinic", "aesthetic_office", "multidisciplinary", "other"],"org_status": ["trial", "active", "suspended", "cancelled"],"waiting_status": ["waiting", "booked", "removed"],"follow_up_status": ["pending", "scheduled", "done", "cancelled"],"proposal_status": ["open", "accepted", "declined", "cancelled", "expired"],"opportunity_kind": ["free_slots", "cancelled_slot", "follow_up_due", "proposal_stale", "no_show", "cancelled_appointment"],"opportunity_status": ["new", "in_progress", "resolved", "dismissed", "expired"],"fin_type": ["income", "expense"],"fin_status": ["pending", "paid", "cancelled"]
           }
         }
 } as const

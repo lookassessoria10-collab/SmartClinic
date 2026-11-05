@@ -10,6 +10,7 @@ import {
 import { select, useDb } from "@/modules/clinic/client";
 import { setAppointmentStatus } from "@/modules/scheduling/actions";
 import { OpportunitiesHomeCard } from "@/modules/opportunities/components/home-card";
+import { FinanceHome } from "@/modules/finance/components/finance-home";
 import type { Appointment, Db } from "@/prototype/types";
 import { Avatar, Card, CardHeader, EmptyState, PageHeader } from "@/ui/primitives";
 import { StatusBadge } from "@/ui/status-badge";
@@ -31,9 +32,16 @@ export default function InicioPage() {
   return (
     <>
       <PageHeader title={`${greeting}, ${first}`} description={cap(fmt(new Date(), "EEEE, d 'de' MMMM"))} />
-      {session.role === "reception" && <ReceptionHome db={db} />}
-      {session.role === "professional" && <ProfessionalHome db={db} />}
-      {session.role === "manager" && <ManagerHome db={db} />}
+      {/* Sem Agenda (só Financeiro), o Início é o resumo financeiro. */}
+      {!db.org.features.includes("schedule") ? (
+        <FinanceHome db={db} />
+      ) : (
+        <>
+          {session.role === "reception" && <ReceptionHome db={db} />}
+          {session.role === "professional" && <ProfessionalHome db={db} />}
+          {session.role === "manager" && <ManagerHome db={db} />}
+        </>
+      )}
     </>
   );
 }
@@ -143,15 +151,19 @@ function ManagerHome({ db }: { db: Db }) {
         </div>
         <div className="flex flex-col gap-4">
           <Card>
-            <CardHeader title="Financeiro do mês" description="Estimativa pelo preço dos serviços: concluídos e confirmados até o fim do mês." icon={Wallet} />
+            <CardHeader
+              title="Financeiro do mês"
+              description={db.financeMonth ? "Lançamentos do Financeiro neste mês." : "Estimativa pelo preço dos serviços: concluídos e confirmados até o fim do mês."}
+              icon={Wallet}
+            />
             <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-b-md border-t border-line bg-line">
               <div className="bg-surface p-4">
                 <dt className="text-caption text-ink-2">Recebido</dt>
-                <dd className="tabular mt-1 text-title-2 font-semibold text-success">{money(received)}</dd>
+                <dd className="tabular mt-1 text-title-2 font-semibold text-success">{money(db.financeMonth ? db.financeMonth.realized.income : received)}</dd>
               </div>
               <div className="bg-surface p-4">
                 <dt className="text-caption text-ink-2">A receber</dt>
-                <dd className="tabular mt-1 text-title-2 font-semibold">{money(toReceive)}</dd>
+                <dd className="tabular mt-1 text-title-2 font-semibold">{money(db.financeMonth ? db.financeMonth.forecast.income : toReceive)}</dd>
               </div>
             </dl>
           </Card>

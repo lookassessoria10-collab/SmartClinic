@@ -1,10 +1,11 @@
 import "server-only";
 import { cache } from "react";
-import { addDays, subDays } from "date-fns";
+import { addDays, endOfMonth, format, startOfMonth, subDays } from "date-fns";
 import { createSupabaseServerClient } from "@/server/supabase";
 import type { MemberContext } from "@/server/auth";
+import type { FinanceReport } from "@/modules/finance/model";
 import type {
-  Appointment, AppointmentEvent, Db, DayPeriod, OpportunityKind, OpportunitySettings, OpportunitySnapshot, Proposal, Segment,
+  Appointment, AppointmentEvent, Db, DayPeriod, ModuleKey, OpportunityKind, OpportunitySettings, OpportunitySnapshot, Proposal, Segment,
 } from "@/prototype/types";
 
 const ALL_KINDS: OpportunityKind[] = ["free_slots", "cancelled_slot", "follow_up_due", "proposal_stale", "no_show", "cancelled_appointment"];
@@ -87,8 +88,18 @@ export const loadClinicDb = cache(async (ctx: MemberContext, viewerName: string)
 
   // Lista de espera, retornos e orçamentos (0014) e o resumo de Oportunidades (0015). A RLS filtra;
   // uma falha aqui não derruba a agenda nem os pacientes.
-  const seesOpportunities = ctx.permissions.has("opportunities.read") || ctx.permissions.has("opportunities.read_own");
-  const [waiting, followUps, proposals, items, oppSettings, feed] = await Promise.all([
+  // Módulos ligados (0016). Sem linhas (ou erro de leitura), tudo continua ligado: esconder por falha
+  // tiraria funções que a clínica usa.
+  const featureRows = await supabase.from("organization_features").select("feature, enabled").eq("organization_id", orgId);
+  if (featureRows.error) console.error("[clínica] falha ao carregar módulos", featureRows.error.code, featureRows.error.message);
+  const features: ModuleKey[] = featureRows.data?.length
+    ? featureRows.data.filter((f) => f.enabled).map((f) => f.feature as ModuleKey)
+    : ["schedule", "opportunities", "finance"];
+  const hasFinance = features.includes("finance");
+  const seesOpportunities =
+    features.includes("opportunities") && (ctx.permissions.has("opportunities.read") || ctx.permissions.has("opportunities.read_own"));
+  const seesReceipts = hasFinance && ["finance.read", "finance.write", "finance.read_own"].some((p) => ctx.permissions.has(p));
+  const [waiting, followUps, proposals, items, oppSettings, feed, receiptRows, month] = await Promise.all([
     supabase
       .from("waiting_list")
       .select("id, patient_id, service_id, professional_id, weekdays, periods, earliest_date, latest_date, notes, status, appointment_id, created_at")
@@ -120,8 +131,21 @@ export const loadClinicDb = cache(async (ctx: MemberContext, viewerName: string)
     seesOpportunities
       ? supabase.rpc("opportunities_feed", { p_org: orgId, p_limit: 3 })
       : Promise.resolve({ data: null, error: null }),
+    seesReceipts
+      ? supabase
+          .from("financial_entries")
+          .select("id, appointment_id, status")
+          .eq("organization_id", orgId)
+          .not("appointment_id", "is", null)
+          .neq("status", "cancelled")
+          .gte("due_date", format(subDays(now, 120), "yyyy-MM-dd"))
+          .limit(5000)
+      : Promise.resolve({ data: [] as { id: string; appointment_id: string | null; status: string }[], error: null }),
+    hasFinance && ctx.permissions.has("finance.read")
+      ? supabase.rpc("finance_report", { p_org: orgId, p_from: format(startOfMonth(now), "yyyy-MM-dd"), p_to: format(endOfMonth(now), "yyyy-MM-dd") })
+      : Promise.resolve({ data: null, error: null }),
   ]);
-  for (const [label, r] of [["lista de espera", waiting], ["retornos", followUps], ["orçamentos", proposals], ["itens", items], ["configurações", oppSettings], ["oportunidades", feed]] as const) {
+  for (const [label, r] of [["lista de espera", waiting], ["retornos", followUps], ["orçamentos", proposals], ["itens", items], ["configurações", oppSettings], ["oportunidades", feed], ["recebimentos", receiptRows], ["financeiro do mês", month]] as const) {
     if (r.error) console.error(`[clínica] falha ao carregar ${label}`, r.error.code, r.error.message);
   }
   const itemsByProposal = new Map<string, Proposal["items"]>();
@@ -206,7 +230,7 @@ export const loadClinicDb = cache(async (ctx: MemberContext, viewerName: string)
       phone: org.data!.phone ?? "",
       address: "",
       settings: { holdHours: 24, minLeadHours: 2, maxDaysAhead: 60, slotStepMin: 30 },
-      features: ["schedule"],
+      features,
     },
     professionals,
     services: (svcs.data ?? []).map((s) => ({
@@ -301,5 +325,9 @@ export const loadClinicDb = cache(async (ctx: MemberContext, viewerName: string)
         }
       : DEFAULT_OPPORTUNITY_SETTINGS,
     opportunities: (feed.data as OpportunitySnapshot | null) ?? null,
+    receipts: Object.fromEntries(
+      (receiptRows.data ?? []).map((r) => [r.appointment_id!, { id: r.id, status: r.status === "paid" ? ("paid" as const) : ("pending" as const) }]),
+    ),
+    financeMonth: (month.data as FinanceReport | null) ?? null,
   };
 });

@@ -38,6 +38,8 @@ Status: **Proposta** até a aprovação da Fase 1; depois **Aceita**. Mudanças 
 | 030 | Oportunidades detectadas **no banco** (`app.opportunity_candidates` + `app.refresh_opportunities`, security definer), gravadas com `dedupe_key` única por clínica (docs/17) | Ninguém grava oportunidade inventada; cada regra é SQL testado no pgTAP; a mesma situação nunca vira duas | Motor em TypeScript no servidor (o resultado teria de ser confiado ao chamador) |
 | 031 | Atualização sob demanda: gatilhos marcam `opportunity_settings.stale` quando agenda, retornos ou orçamentos mudam; o feed recalcula se marcado ou se passou de 10 min | Sem cron nem Realtime; custo só quando alguém abre a tela | `pg_cron` de hora em hora (pode somar depois) |
 | 032 | Valores de oportunidade só saem pelo feed, que mascara para quem não pode ver; a coluna `value_cents` não tem GRANT de leitura | "Usuário sem permissão não vê valores" garantido no banco, não só na tela | Esconder na interface |
+| 034 | Módulos por clínica em `organization_features` (Agenda, Oportunidades, Financeiro); menu e áreas filtrados pelo módulo; funções do Financeiro recusam com o módulo desligado | Cada cliente usa só o que contratou/escolheu; desligar não apaga dados | Planos com recursos fixos (fica para a Fase 9) |
+| 035 | Financeiro com escrita só por funções; recepção escreve só receitas; atraso calculado (não guardado); cancelar nunca apaga; um recebimento ativo por atendimento (índice único) | Regras de acesso e integridade no banco; histórico completo | Lançamento editável direto pela tabela |
 | 033 | Horários livres contados **sem sobreposição** (minutos livres ÷ duração + intervalo do serviço de referência) e trechos liberados por cancelamento descontados do dia | Valor potencial nunca conta o mesmo horário duas vezes | Contar todos os inícios possíveis de 15 em 15 min (infla o número) |
 
 ## Parte B — Decisões que exigem sua aprovação
@@ -80,6 +82,7 @@ Marque cada uma com ✅ (aprovado como proposto), ✏️ (aprovado com ajuste) o
 | **D-22** | Escopo antes do primeiro teste externo | Etapas A (cadastros) + B (agenda) reais; agendamento online e financeiro em seguida | ✅ Aprovada |
 | **D-23** | Testadores | Pessoas convidadas, **somente dados fictícios**; staging gratuito, uso não comercial | ✅ Aprovada |
 | **D-24** | E-mail dos testadores | SMTP próprio gratuito (Resend) com domínio do cliente; configurado por ele no painel | ✅ Aprovada |
+| **D-26** | Módulos e Financeiro (docs/19) | No onboarding a clínica escolhe Agenda, Oportunidades (exige Agenda) e/ou Financeiro; muda depois em Gestão → Módulos. Financeiro completo (receitas, despesas, categorias, formas de pagamento, repetição e parcelas, recebimento do atendimento, relatório com CSV e impressão). Totais e relatório só para a gestão; recepção lança e recebe receitas | ✅ Aprovada (2026-11-05) |
 | **D-25** | Módulo Oportunidades (docs/17) | Dentro de Início, sem 6º item no menu (O-1); valores para gestão e para o profissional nos próprios, recepção opcional (O-2); atualização sob demanda (O-3); orçamento com itens (O-4); regras nas migrações, parâmetros por clínica (O-5). Lista de espera, retornos e orçamentos entram no MVP na forma mínima | ✅ Aprovada (2026-11-02) |
 
 ### Perguntas abertas (não bloqueiam a Fase 2)

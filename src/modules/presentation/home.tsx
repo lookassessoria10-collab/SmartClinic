@@ -171,7 +171,7 @@ function Explore() {
     { icon: Play, title: "Apresentação completa", text: `${total} lâminas em ${chapters} capítulos, com setas, deslize e tela cheia.`, href: "#s/1" },
     { icon: Route, title: "Trilha por perfil", text: "Gestão, recepção ou profissional: só o que importa para você.", href: "#trilhas" },
     { icon: Layers, title: "Antes × Com o smartclin", text: "Cartões que viram: como era e como fica com a plataforma.", href: "#antes-depois" },
-    { icon: CircleHelp, title: "Teste rápido", text: "6 perguntas para fixar as regras mais importantes.", href: "#teste" },
+    { icon: CircleHelp, title: "Teste rápido", text: `${QUESTIONS.length} perguntas para fixar as regras mais importantes.`, href: "#teste" },
   ];
   return (
     <section id="explorar" aria-labelledby="explorar-title" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
@@ -237,6 +237,7 @@ const CARDS: { topic: string; before: string; after: string }[] = [
   { topic: "Cancelamentos", before: "Cancelou, o horário ficou vazio.", after: "Vira oportunidade na hora, com a lista de espera compatível a um clique." },
   { topic: "Retornos", before: "“Volte em 30 dias” combinado e esquecido.", after: "Retorno registrado com prazo: aparece na hora certa e some quando é agendado." },
   { topic: "Orçamentos", before: "Proposta enviada e nunca mais lembrada.", after: "Orçamento parado vira lembrete, com histórico de cada contato." },
+  { topic: "Financeiro", before: "Caderno de contas e planilha que ninguém atualiza.", after: "Receitas e despesas lançadas, atrasos à vista e o relatório do mês em uma tela." },
   { topic: "Equipe", before: "Todo mundo vê tudo, inclusive valores.", after: "Cada perfil vê o que precisa; valores só para quem pode." },
 ];
 
@@ -282,6 +283,11 @@ function FlipCard({ topic, before, after }: { topic: string; before: string; aft
 
 const QUESTIONS: { q: string; options: string[]; answer: number; why: string; chapter: number }[] = [
   {
+    q: "Uma clínica só quer controlar o financeiro. O que ela vê no menu?",
+    options: ["Tudo, inclusive a agenda", "Só Início, Financeiro e Gestão", "Só o Financeiro"],
+    answer: 1, why: "A clínica escolhe os módulos no cadastro e pode ligar a Agenda depois em Gestão → Módulos.", chapter: 2,
+  },
+  {
     q: "Duas pessoas tentam agendar o mesmo horário, com o mesmo profissional, ao mesmo tempo. O que acontece?",
     options: ["As duas ficam marcadas", "Só uma consegue; o sistema sugere outros horários para a outra", "O sistema escolhe um paciente sozinho"],
     answer: 1, why: "A regra de conflito fica no banco de dados: um profissional nunca tem dois atendimentos sobrepostos.", chapter: 3,
@@ -294,7 +300,7 @@ const QUESTIONS: { q: string; options: string[]; answer: number; why: string; ch
   {
     q: "Quem vê os valores estimados das oportunidades, por padrão?",
     options: ["Toda a equipe", "A gestão, e cada profissional nos próprios", "Ninguém"],
-    answer: 1, why: "A recepção pode passar a ver se a gestão liberar em Gestão → Oportunidades.", chapter: 6,
+    answer: 1, why: "A recepção pode passar a ver se a gestão liberar em Gestão → Oportunidades.", chapter: 7,
   },
   {
     q: "Onde registrar o diagnóstico de um paciente no smartclin?",

@@ -1,5 +1,6 @@
 // Tipos dos dados da clínica usados pelas telas. Espelham docs/03-modelo-de-dados.md de forma
 // simplificada; desde a Fase 4 são preenchidos pelo banco (src/modules/clinic/server.ts).
+import type { FinanceReport } from "@/modules/finance/model";
 
 export type AppointmentStatus =
   | "requested"
@@ -38,7 +39,8 @@ export interface Organization {
     maxDaysAhead: number;
     slotStepMin: number;
   };
-  features: string[];
+  /** Módulos ligados (organization_features, migração 0016). */
+  features: ModuleKey[];
   onboarding?: { segment: Segment; size: string; services: string[]; need: Need };
 }
 
@@ -155,7 +157,14 @@ export interface Db {
   opportunitySettings: OpportunitySettings;
   /** Resumo para o Início; null se o módulo não pôde ser lido (o resto da tela segue). */
   opportunities: OpportunitySnapshot | null;
+  /* Financeiro (migração 0016). */
+  /** Atendimento → recebimento ativo (para "Registrar recebimento" na agenda). */
+  receipts: Record<string, { id: string; status: "pending" | "paid" }>;
+  /** Mês corrente para o Início da gestão; null sem o módulo ou sem permissão. */
+  financeMonth: FinanceReport | null;
 }
+
+export type ModuleKey = "schedule" | "opportunities" | "finance";
 
 export type DayPeriod = "morning" | "afternoon" | "evening";
 

@@ -274,6 +274,8 @@ Assim, um horário nunca fica preso por uma reserva vencida.
 
 ## 6. Financeiro
 
+> Implementado na migração 0016 (docs/19), com `financial_categories.position/active`, `payment_method` validado, série (`series_id`, `repeat_kind`, `installment(s)`), `cancelled_at` e `notes`. Sem `unit_id` por enquanto (unidades ainda não aparecem na interface).
+
 ```sql
 create type fin_type as enum ('income','expense');
 create type fin_status as enum ('pending','paid','cancelled');

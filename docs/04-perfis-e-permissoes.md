@@ -39,6 +39,9 @@ Legenda: ✅ permitido · 🔸 apenas os próprios (atendimentos em que é o pro
 | `finance.read` | ✅ | —¹ | — |
 | `finance.write` (registrar recebimento) | ✅ | ✅ | — |
 | `finance.read_own` (recebimentos dos próprios atendimentos) | ✅ | — | ✅¹ |
+| Financeiro na prática (docs/19): receitas | lança e recebe | lança e recebe | lê as próprias |
+| Financeiro na prática: despesas, totais, relatório, CSV, categorias | ✅ | — | — |
+| Módulos (Gestão → Módulos) | ✅ | — | — |
 | **Oportunidades** (docs/17, migração 0014) | | | |
 | `opportunities.read` / `opportunities.work` | ✅ | ✅ | 🔸² |
 | Valores das oportunidades (feed) | ✅ | —³ | 🔸 |

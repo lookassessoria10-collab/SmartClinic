@@ -33,24 +33,35 @@ export const SEGMENTS = [
   "aesthetic_clinic", "aesthetic_office", "multidisciplinary", "other",
 ] as const;
 export const SIZES = ["Só eu", "2 a 5", "6 a 10", "Mais de 10"] as const;
-export const NEEDS = ["schedule", "online_booking", "finance", "migrate"] as const;
+export const MODULE_KEYS = ["schedule", "opportunities", "finance"] as const;
 
-export const onboardingSchema = z.object({
-  name: z.string().trim().min(2, "Informe o nome do estabelecimento.").max(120, "Nome longo demais."),
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .superRefine((v, ctx) => {
-      const problem = slugProblem(v);
-      if (problem) ctx.addIssue({ code: "custom", message: problem });
-    }),
-  segment: z.enum(SEGMENTS, { message: "Escolha o tipo de estabelecimento." }),
-  size: z.enum(SIZES, { message: "Escolha uma opção." }),
-  services: z.array(z.string().trim().min(1).max(60)).min(1, "Escolha ao menos um serviço.").max(30),
-  need: z.enum(NEEDS, { message: "Escolha a principal necessidade." }),
-  attends: z.boolean(),
-  specialty: z.string().trim().max(80).optional(),
-});
+export const onboardingSchema = z
+  .object({
+    name: z.string().trim().min(2, "Informe o nome do estabelecimento.").max(120, "Nome longo demais."),
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .superRefine((v, ctx) => {
+        const problem = slugProblem(v);
+        if (problem) ctx.addIssue({ code: "custom", message: problem });
+      }),
+    segment: z.enum(SEGMENTS, { message: "Escolha o tipo de estabelecimento." }),
+    // Módulos escolhidos (0016): Oportunidades exige Agenda; equipe e serviços só com Agenda.
+    modules: z.array(z.enum(MODULE_KEYS)).min(1, "Escolha ao menos um módulo.").max(3),
+    size: z.enum(SIZES, { message: "Escolha uma opção." }).optional(),
+    services: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
+    attends: z.boolean().default(false),
+    specialty: z.string().trim().max(80).optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.modules.includes("opportunities") && !v.modules.includes("schedule")) {
+      ctx.addIssue({ code: "custom", path: ["modules"], message: "Oportunidades usa a Agenda: ligue a Agenda também." });
+    }
+    if (v.modules.includes("schedule") && !v.size) ctx.addIssue({ code: "custom", path: ["size"], message: "Escolha uma opção." });
+    if (v.modules.includes("schedule") && v.services.length === 0) {
+      ctx.addIssue({ code: "custom", path: ["services"], message: "Escolha ao menos um serviço." });
+    }
+  });
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
