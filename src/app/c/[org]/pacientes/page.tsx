@@ -210,7 +210,7 @@ function PatientDetails({ db, patient, canWrite, canDelete, onEdit, onClose }: {
         )}
       </section>
 
-      <FollowUpSummary db={db} patient={patient} />
+      {db.org.features.includes("opportunities") && <FollowUpSummary db={db} patient={patient} />}
 
       <div className="flex flex-wrap gap-2">
         {canWrite && (

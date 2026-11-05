@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import {
-  ArrowLeft, Building2, CalendarCheck, Check, CircleAlert, Globe, HeartPulse, Layers, Loader2, Plus, Sparkles, Stethoscope, Upload, Wallet, type LucideIcon,
+  ArrowLeft, Building2, CalendarCheck, Check, CircleAlert, HeartPulse, Layers, Loader2, Plus, Sparkles, Stethoscope, Wallet, type LucideIcon,
 } from "lucide-react";
 import { SEGMENT_SUGGESTIONS, segmentFamily } from "@/modules/organizations/suggestions";
 import { checkSlug, createClinic } from "@/modules/organizations/actions";
 import { slugify } from "@/modules/organizations/schemas";
-import type { Need, Segment } from "@/prototype/types";
+import type { ModuleKey, Segment } from "@/prototype/types";
 import { Button } from "@/ui/button";
 import { Wordmark } from "@/ui/brand";
 import { Field, Input } from "@/ui/field";
@@ -26,12 +26,14 @@ const SEGMENTS: { value: Segment; label: string; icon: LucideIcon }[] = [
 
 const SIZES = ["Só eu", "2 a 5", "6 a 10", "Mais de 10"];
 
-const NEEDS: { value: Need; label: string; description: string; icon: LucideIcon }[] = [
-  { value: "schedule", label: "Organizar a agenda", description: "Substituir caderno, planilha ou agenda pessoal.", icon: CalendarCheck },
-  { value: "online_booking", label: "Receber agendamentos online", description: "Um link para pacientes pedirem horário.", icon: Globe },
-  { value: "finance", label: "Controlar o financeiro", description: "Recebimentos, despesas e pendências.", icon: Wallet },
-  { value: "migrate", label: "Migrar de outro sistema", description: "Importar pacientes, profissionais e serviços.", icon: Upload },
+// Módulos (0016): a clínica usa só o que escolher; tudo pode mudar depois em Gestão → Módulos.
+const MODULE_CHOICES: { value: ModuleKey; label: string; description: string; icon: LucideIcon; requires?: ModuleKey }[] = [
+  { value: "schedule", label: "Agenda e pacientes", description: "Agenda por profissional, horários, bloqueios e cadastro de pacientes.", icon: CalendarCheck },
+  { value: "opportunities", label: "Oportunidades", description: "Horários livres, lista de espera, retornos e orçamentos parados.", icon: Sparkles, requires: "schedule" },
+  { value: "finance", label: "Financeiro", description: "Receitas, despesas, contas a pagar e a receber, e relatório do período.", icon: Wallet },
 ];
+
+type Step = "basics" | "modules" | "team" | "services" | "review";
 
 const FUTURE: Record<string, string> = {
   dental: "Odontograma",
@@ -41,7 +43,8 @@ const FUTURE: Record<string, string> = {
 };
 
 export default function OnboardingPage() {
-  const [step, setStep] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [modules, setModules] = useState<ModuleKey[]>([]);
   const [name, setName] = useState("");
   // Endereço da página pública: sugerido pelo nome até a pessoa editá-lo.
   const [slug, setSlug] = useState("");
@@ -54,15 +57,19 @@ export default function OnboardingPage() {
   const [size, setSize] = useState<string | null>(null);
   const [services, setServices] = useState<string[]>([]);
   const [custom, setCustom] = useState("");
-  const [need, setNeed] = useState<Need | null>(null);
   const [error, setError] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
+  const schedule = modules.includes("schedule");
+  // Equipe e serviços só existem com a Agenda.
+  const flow: Step[] = ["basics", "modules", ...(schedule ? (["team", "services"] as const) : []), "review"];
+  const step = flow[Math.min(stepIndex, flow.length - 1)];
+  const last = flow.length - 1;
   const family = segment ? segmentFamily(segment) : "multidisciplinary";
   const suggestions = SEGMENT_SUGGESTIONS[family];
 
   // Ao mudar de passo, o foco vai para o título (leitores de tela anunciam o novo passo).
-  useEffect(() => heading.current?.focus(), [step]);
+  useEffect(() => heading.current?.focus(), [stepIndex]);
 
   // Verificação do endereço no banco, ~400 ms depois da última digitação.
   useEffect(() => {
@@ -85,58 +92,75 @@ export default function OnboardingPage() {
     setServices(SEGMENT_SUGGESTIONS[segmentFamily(s)].slice(0, 3).map((x) => x.name));
   }
 
+  function toggleModule(m: ModuleKey) {
+    setModules((all) => {
+      if (all.includes(m)) return all.filter((x) => x !== m && !(m === "schedule" && x === "opportunities"));
+      return [...all, m];
+    });
+  }
+
   function next() {
     setError(null);
-    if (step === 0 && !name.trim()) return setError("Informe o nome do estabelecimento.");
-    if (step === 0 && slugStatus.state !== "ok")
+    if (step === "basics" && !name.trim()) return setError("Informe o nome do estabelecimento.");
+    if (step === "basics" && slugStatus.state !== "ok")
       return setError(slugStatus.state === "checking" ? "Aguarde a verificação do endereço." : (slugStatus.message ?? "Escolha um endereço para a página de agendamento."));
-    if (step === 0 && !segment) return setError("Escolha o tipo de estabelecimento.");
-    if (step === 1 && !size) return setError("Escolha quantos profissionais atendem.");
-    if (step === 1 && attends === null) return setError("Conte se você também atende os pacientes.");
-    if (step === 2 && services.length === 0) return setError("Escolha ao menos um serviço. Você pode mudar depois.");
-    if (step === 3 && !need) return setError("Escolha a principal necessidade.");
-    setStep((s) => s + 1);
+    if (step === "basics" && !segment) return setError("Escolha o tipo de estabelecimento.");
+    if (step === "modules" && modules.length === 0) return setError("Escolha ao menos um módulo. Você pode mudar depois.");
+    if (step === "team" && !size) return setError("Escolha quantos profissionais atendem.");
+    if (step === "team" && attends === null) return setError("Conte se você também atende os pacientes.");
+    if (step === "services" && services.length === 0) return setError("Escolha ao menos um serviço. Você pode mudar depois.");
+    setStepIndex((i) => Math.min(i + 1, last));
   }
 
   function finish() {
     setError(null);
     startSaving(async () => {
       // Sucesso: a Server Action redireciona para a clínica criada. Aqui só chegam erros.
-      const r = await createClinic({ name, slug, segment, size, services, need, attends, specialty: specialty || undefined });
+      const r = await createClinic({
+        name, slug, segment, modules,
+        size: schedule ? size : undefined,
+        services: schedule ? services : [],
+        attends: schedule && attends === true,
+        specialty: schedule && specialty ? specialty : undefined,
+      });
       if (r.fields?.slug) {
         setSlugStatus({ state: "bad", message: r.fields.slug });
-        setStep(0);
+        setStepIndex(0);
       }
       setError(r.fields?.slug ?? r.message ?? "Não foi possível criar a clínica.");
     });
   }
 
-  const titles = [
-    "Qual é o tipo de estabelecimento?",
-    "Quantos profissionais atendem?",
-    "Quais serviços vocês oferecem?",
-    "Qual é a principal necessidade agora?",
-    "Preparamos tudo para você",
-  ];
+  const titles: Record<Step, string> = {
+    basics: "Qual é o tipo de estabelecimento?",
+    modules: "O que você quer usar no smartclin?",
+    team: "Quantos profissionais atendem?",
+    services: "Quais serviços vocês oferecem?",
+    review: "Preparamos tudo para você",
+  };
 
   return (
     <main className="min-h-dvh px-4 py-8 sm:py-14">
       <div className="mx-auto w-full max-w-2xl">
         <div className="mb-6 flex items-center justify-between">
-          {step > 0 ? (
-            <Button variant="ghost" size="sm" onClick={() => setStep((s) => s - 1)}>
+          {stepIndex > 0 ? (
+            <Button variant="ghost" size="sm" onClick={() => setStepIndex((i) => i - 1)}>
               <ArrowLeft className="size-4" aria-hidden /> Voltar
             </Button>
           ) : (
             <Wordmark className="text-title-2 leading-none text-accent" />
           )}
-          {step < 4 && <span className="text-body-sm text-ink-2">Passo {step + 1} de 4</span>}
+          {step !== "review" && (
+            <span className="text-body-sm text-ink-2">
+              Passo {stepIndex + 1} de {last}
+            </span>
+          )}
         </div>
 
-        {step < 4 && (
+        {step !== "review" && (
           <div className="mb-8 flex gap-1.5" aria-hidden>
-            {[0, 1, 2, 3].map((i) => (
-              <span key={i} className={cn("h-1 flex-1 rounded-full transition-colors duration-(--duration-base)", i <= step ? "bg-accent" : "bg-line")} />
+            {flow.slice(0, last).map((k, i) => (
+              <span key={k} className={cn("h-1 flex-1 rounded-full transition-colors duration-(--duration-base)", i <= stepIndex ? "bg-accent" : "bg-line")} />
             ))}
           </div>
         )}
@@ -146,7 +170,7 @@ export default function OnboardingPage() {
         </h1>
 
         <div className="mt-6">
-          {step === 0 && (
+          {step === "basics" && (
             <div className="flex flex-col gap-6">
               <Field label="Nome do estabelecimento" hint="Aparece na sua página de agendamento.">
                 <Input
@@ -183,7 +207,41 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 1 && (
+          {step === "modules" && (
+            <fieldset>
+              <legend className="mb-4 text-body-sm text-ink-2">Escolha um ou mais. Dá para ligar e desligar depois em Gestão → Módulos, sem perder dados.</legend>
+              <div className="grid grid-cols-1 gap-3">
+                {MODULE_CHOICES.map((m) => {
+                  const on = modules.includes(m.value);
+                  const blocked = !!m.requires && !modules.includes(m.requires);
+                  return (
+                    <label
+                      key={m.value}
+                      className={cn(
+                        "flex min-h-16 cursor-pointer items-center gap-3 rounded-md border bg-surface p-4 transition-[border-color,box-shadow,background-color] duration-(--duration-fast) has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent",
+                        on ? "border-accent bg-accent-subtle shadow-[0_0_0_1px_var(--color-accent)]" : "border-line hover:border-line-strong hover:bg-canvas",
+                        blocked && "cursor-not-allowed opacity-60",
+                      )}
+                    >
+                      <input type="checkbox" className="sr-only" checked={on} disabled={blocked} onChange={() => toggleModule(m.value)} />
+                      <span className={cn("grid size-10 shrink-0 place-items-center rounded-sm", on ? "bg-accent text-on-accent" : "bg-muted text-ink-2")}>
+                        <m.icon className="size-5" aria-hidden />
+                      </span>
+                      <span className="flex-1">
+                        <span className="block text-body font-medium">{m.label}</span>
+                        <span className="mt-0.5 block text-body-sm text-ink-2">{blocked ? "Precisa da Agenda e pacientes." : m.description}</span>
+                      </span>
+                      <span className={cn("grid size-5 shrink-0 place-items-center rounded-sm border", on ? "border-accent bg-accent text-on-accent" : "border-line-strong")} aria-hidden>
+                        {on && <Check className="size-3" />}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
+
+          {step === "team" && (
             <div className="flex flex-col gap-8">
               <ChoiceGrid label="Número de profissionais" cols="sm:grid-cols-4">
                 {SIZES.map((s) => (
@@ -213,7 +271,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 2 && (
+          {step === "services" && (
             <div>
               <p className="mb-4 text-body-sm text-ink-2">Sugestões para o seu tipo de estabelecimento. Duração e preço você ajusta depois.</p>
               <div className="flex flex-wrap gap-2" role="group" aria-label="Serviços">
@@ -255,21 +313,14 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 3 && (
-            <ChoiceGrid label="Principal necessidade" cols="sm:grid-cols-2">
-              {NEEDS.map((n) => (
-                <Choice key={n.value} selected={need === n.value} onSelect={() => setNeed(n.value)} icon={n.icon} label={n.label} description={n.description} />
-              ))}
-            </ChoiceGrid>
-          )}
-
-          {step === 4 && (
+          {step === "review" && (
             <div className="flex flex-col gap-4">
               <p className="text-body text-ink-2">Revise e ajuste quando quiser em <strong className="font-medium text-ink">Gestão</strong>. Nada aqui é definitivo.</p>
               <Summary title="Clínica">
                 <p className="text-body-sm font-medium">{name}</p>
                 <p className="text-body-sm text-ink-2">Página de agendamento: /agendar/{slug}</p>
               </Summary>
+              {schedule && (
               <Summary title="Serviços">
                 <ul className="divide-y divide-line">
                   {services.map((n) => {
@@ -283,19 +334,24 @@ export default function OnboardingPage() {
                   })}
                 </ul>
               </Summary>
-              <Summary title="Horário de atendimento">
-                <p className="text-body-sm">Segunda a sexta, 08:00–12:00 e 13:00–18:00</p>
-              </Summary>
+              )}
+              {schedule && (
+                <Summary title="Horário de atendimento">
+                  <p className="text-body-sm">Segunda a sexta, 08:00–12:00 e 13:00–18:00</p>
+                </Summary>
+              )}
               <Summary title="Módulos ativos">
                 <ul className="flex flex-wrap gap-2 text-body-sm">
-                  <Pill on>Agenda</Pill>
-                  <Pill on>Agendamento online</Pill>
-                  <Pill on>Financeiro</Pill>
-                  {need === "migrate" && <Pill on>Importação de dados</Pill>}
-                  <Pill>{FUTURE[family]} · em breve</Pill>
+                  {MODULE_CHOICES.map((m) => (
+                    <Pill key={m.value} on={modules.includes(m.value)}>
+                      {m.label}
+                      {!modules.includes(m.value) && " · pode ligar depois"}
+                    </Pill>
+                  ))}
+                  {schedule && <Pill>{FUTURE[family]} · em breve</Pill>}
                 </ul>
               </Summary>
-              {size === "Só eu" && (
+              {schedule && size === "Só eu" && (
                 <p className="rounded-md bg-info-subtle p-3 text-body-sm text-info">Como você atende sozinho(a), o filtro de profissionais ficará oculto na agenda.</p>
               )}
             </div>
@@ -309,7 +365,7 @@ export default function OnboardingPage() {
         )}
 
         <div className="mt-8 flex justify-end">
-          {step < 4 ? (
+          {step !== "review" ? (
             <Button size="lg" onClick={next} className="w-full sm:w-auto">
               Continuar
             </Button>

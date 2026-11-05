@@ -13,7 +13,7 @@ Deixar a plataforma usável no dia a dia de uma clínica, para pessoas convidada
 | **B. Agenda** (Fase 5) | Horário de atendimento semanal, bloqueios (feriado, férias, folga, pausa), agenda dia/semana/mês com criar, remarcar, concluir, falta e cancelar; Início com números reais; onboarding cria serviços e horário inicial | Em teste |
 | C. Agendamento online (Fase 6) | Página pública, fila de aprovação, anti-robô | Depois da rodada de testes |
 | **Oportunidades** ([17](17-oportunidades.md)) | Horários livres, horário liberado por cancelamento com sugestão da lista de espera, retornos registrados, orçamentos parados, faltas/cancelamentos sem remarcação; lista de espera, retornos e orçamentos | Pronto para teste |
-| D. Financeiro (Fase 8) | Recebimentos e despesas | Depois de C |
+| **D. Financeiro + Módulos** ([19](19-modulos-e-financeiro.md)) | Escolha de módulos no onboarding e em Gestão; receitas, despesas, categorias, repetição e parcelas, recebimento do atendimento, relatório com CSV | Pronto para teste |
 
 Telas que ainda não são reais mostram **"Em breve"**, nunca dados inventados: Financeiro,
 Solicitações, página pública `/agendar/<clínica>`, Importar/Exportar, Assinatura.

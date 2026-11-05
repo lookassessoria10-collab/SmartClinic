@@ -10,6 +10,7 @@ import { PatientPicker } from "@/modules/patients/components/patient-picker";
 import { select } from "@/modules/clinic/client";
 import { createAppointment, rescheduleAppointment, setAppointmentStatus } from "@/modules/scheduling/actions";
 import { bookWaitingEntry } from "@/modules/opportunities/actions";
+import { ReceiveAppointment } from "@/modules/finance/components/receive-appointment";
 import type { Db, Patient } from "@/prototype/types";
 import { Sheet } from "@/ui/sheet";
 import { Button } from "@/ui/button";
@@ -344,8 +345,11 @@ function Details({ db, id, onClose }: { db: Db; id: string; onClose: () => void 
         </div>
       )}
 
+      {/* Recebimento no Financeiro (0016), se o módulo estiver ligado. */}
+      {!rescheduling && <ReceiveAppointment appointment={a} />}
+
       {/* Retorno só quando alguém registra (docs/17 §5 C): nada é inferido do histórico. */}
-      {patient && (a.status === "completed" || a.status === "confirmed") && (
+      {patient && db.org.features.includes("opportunities") && (a.status === "completed" || a.status === "confirmed") && (
         <Link
           href={`/c/${org}/inicio/oportunidades/retornos?novo=1&paciente=${patient.id}&profissional=${a.professionalId}&servico=${a.serviceId}&origem=${a.id}`}
           className="inline-flex h-10 items-center gap-2 self-start rounded-full px-3 text-body-sm font-medium text-accent hover:bg-accent-subtle"

@@ -117,3 +117,9 @@ cross join (values
   ('33333333-3333-4333-8333-000000000003'::uuid, '44444444-4444-4444-8444-000000000004'::uuid, '55555555-5555-4555-8555-000000000003'::uuid, interval '10 hours', interval '60 minutes')
 ) as v(prof, svc, pat, ini, dur)
 where dia.n <= 3 or v.prof = '33333333-3333-4333-8333-000000000003';
+
+-- Módulos (0016): as clínicas do seed usam tudo; categorias financeiras iniciais.
+insert into public.organization_features (organization_id, feature, enabled)
+select o.id, f, true from public.organizations o, unnest(array['schedule', 'opportunities', 'finance']) f
+on conflict do nothing;
+select app.seed_finance_categories(o.id) from public.organizations o;

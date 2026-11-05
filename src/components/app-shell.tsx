@@ -7,9 +7,10 @@ import * as Menu from "@radix-ui/react-dropdown-menu";
 import { CalendarDays, Check, ChevronsUpDown, Home, LogOut, Plus, Settings2, ShieldCheck, Users, Wallet, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { select, useDb } from "@/modules/clinic/client";
-import { canAccess, ROLE_LABEL, type Section } from "@/prototype/access";
+import { canAccess, moduleOn, ROLE_LABEL, type Section } from "@/prototype/access";
 import type { Role } from "@/prototype/types";
 import { useSession, type ClinicSession } from "./session-context";
+import { ModuleOff } from "./require-module";
 import { Avatar, EmptyState, Skeleton } from "@/ui/primitives";
 import { BrandMark, Wordmark } from "@/ui/brand";
 import { Button } from "@/ui/button";
@@ -38,7 +39,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const role = session.role;
 
-  const items = NAV.filter((n) => canAccess(role, n.section));
+  // Só os módulos que a clínica escolheu (Gestão → Módulos).
+  const items = NAV.filter((n) => canAccess(role, n.section) && moduleOn(db.org.features, n.section));
   const pending = select.pendingRequests(db).length;
 
   return (
@@ -47,7 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         Pular para o conteúdo
       </a>
       {/* Barra lateral (desktop/tablet): vidro flutuando sobre a névoa da marca */}
-      <aside className="glass fixed top-3 bottom-3 left-3 z-20 hidden w-[76px] flex-col rounded-[28px] border p-2 md:flex lg:w-[244px] lg:p-3">
+      <aside className="glass fixed top-3 bottom-3 left-3 z-20 hidden w-[76px] print:hidden! flex-col rounded-[28px] border p-2 md:flex lg:w-[244px] lg:p-3">
         {/* Nome acessível = texto visível ("smartclin") + complemento só para leitor de tela. */}
         <Link href={`${base}/inicio`} className="mb-3 flex h-11 items-center justify-center gap-2.5 rounded-full px-1.5 lg:justify-start">
           <BrandMark className="size-9 text-title-2" />
@@ -87,20 +89,22 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Cabeçalho (celular) */}
-      <header className="glass sticky top-2 z-20 mx-2 mt-2 flex h-14 items-center justify-between rounded-full border px-2 md:hidden">
+      <header className="glass sticky top-2 z-20 mx-2 mt-2 flex h-14 items-center justify-between rounded-full border px-2 md:hidden print:hidden">
         <OrgSwitcher session={session} compact />
         <UserMenu name={session.user.name} email={session.user.email} role={role} accountHref={`${base}/conta`} compact />
       </header>
 
-      <main id="conteudo" className="px-4 pt-6 pb-28 md:pt-8 md:pr-6 md:pb-10 md:pl-[100px] lg:pl-[276px]">
-        <div className="mx-auto max-w-[1400px]">{canAccess(role, current) ? children : <NoAccess />}</div>
+      <main id="conteudo" className="px-4 pt-6 pb-28 md:pt-8 md:pr-6 md:pb-10 md:pl-[100px] lg:pl-[276px] print:p-0">
+        <div className="mx-auto max-w-[1400px]">
+          {!canAccess(role, current) ? <NoAccess /> : !moduleOn(db.org.features, current) ? <ModuleOff /> : children}
+        </div>
       </main>
 
       {/* Barra inferior (celular) */}
       {/* Barra de abas flutuante em cápsula, como no iOS */}
       <nav
         aria-label="Principal"
-        className="glass fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 flex rounded-full border p-1.5 md:hidden"
+        className="glass fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 flex rounded-full border p-1.5 md:hidden print:hidden"
       >
         {items.map((n) => {
           const active = current === n.section;

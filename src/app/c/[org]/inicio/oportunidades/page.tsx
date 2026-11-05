@@ -6,6 +6,7 @@ import { NoPermission } from "@/modules/team/components/gestao-common";
 import { dbErrorMessage } from "@/modules/clinic/errors";
 import { feedArgs, parseFilters } from "@/modules/opportunities/filters";
 import { OpportunitiesView } from "@/modules/opportunities/components/opportunities-view";
+import { ModuleOff } from "@/components/require-module";
 import type { OpportunitySnapshot } from "@/prototype/types";
 
 export const metadata: Metadata = { title: "Oportunidades" };
@@ -20,6 +21,10 @@ export default async function OpportunitiesPage({ params, searchParams }: PagePr
   // Filtros vêm da URL (só valores conhecidos); o banco atualiza se algo mudou e mascara valores.
   const filters = parseFilters(await searchParams);
   const supabase = await createSupabaseServerClient();
+  // Módulo desligado em Gestão → Módulos (0016): nem calcula.
+  const { data: mod } = await supabase
+    .from("organization_features").select("enabled").eq("organization_id", ctx.organization.id).eq("feature", "opportunities").maybeSingle();
+  if (mod && !mod.enabled) return <ModuleOff />;
   const [feed, team] = await Promise.all([
     supabase.rpc("opportunities_feed", feedArgs(ctx.organization.id, filters)),
     supabase.rpc("list_team", { p_org: ctx.organization.id }),

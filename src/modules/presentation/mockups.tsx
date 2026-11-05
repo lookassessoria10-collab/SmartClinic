@@ -262,6 +262,7 @@ export function MockPermissions() {
     ["Oportunidades", "Todas, com valores", "Todas; valores se liberado", "As próprias, com valores"],
     ["Orçamentos", "Todos", "Todos", "Os próprios"],
     ["Equipe e configurações", "Sim", "—", "—"],
+    ["Financeiro: totais e relatório", "Sim", "Lança e recebe receitas", "Recebimentos próprios"],
     ["Auditoria", "Sim", "—", "—"],
   ];
   return (

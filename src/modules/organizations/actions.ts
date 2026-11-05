@@ -61,23 +61,25 @@ export async function checkSlug(slug: string): Promise<{ available: boolean; mes
 }
 
 /**
- * Cria a clínica numa transação única (função create_organization, migração 0007):
- * organização + unidade padrão + gestor + profissional (se atende) + respostas do onboarding.
+ * Cria a clínica numa transação única (função create_organization, migrações 0007 e 0016):
+ * organização + unidade padrão + gestor + profissional (se atende e usa a Agenda) + módulos escolhidos.
  */
 export async function createClinic(input: unknown): Promise<OnboardingResult> {
   await requireUser("/onboarding");
   const parsed = onboardingSchema.safeParse(input);
   if (!parsed.success) return { fields: fieldErrors(parsed.error), message: "Revise os campos destacados." };
   const v = parsed.data;
+  const schedule = v.modules.includes("schedule");
 
   const supabase = await createSupabaseServerClient();
   const { data: orgId, error } = await supabase.rpc("create_organization", {
     p_name: v.name,
     p_slug: v.slug,
     p_segment: v.segment,
-    p_onboarding: { size: v.size, services: v.services, need: v.need },
-    p_attends: v.attends,
-    p_specialty: v.attends ? v.specialty || undefined : undefined,
+    p_onboarding: { size: v.size, services: v.services, modules: v.modules },
+    p_attends: schedule && v.attends,
+    p_specialty: schedule && v.attends ? v.specialty || undefined : undefined,
+    p_modules: v.modules,
   });
 
   if (error) {
@@ -88,7 +90,8 @@ export async function createClinic(input: unknown): Promise<OnboardingResult> {
     return { message: "Não foi possível criar a clínica agora. Tente de novo em instantes." };
   }
 
-  await applySuggestions(orgId, v.segment, v.services);
+  // Serviços sugeridos e horário inicial só fazem sentido com a Agenda.
+  if (schedule) await applySuggestions(orgId, v.segment, v.services);
 
   (await cookies()).set(LAST_CLINIC_COOKIE, v.slug, { path: "/", sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
   redirect(`/c/${v.slug}/inicio`);

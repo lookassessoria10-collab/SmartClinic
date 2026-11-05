@@ -22,7 +22,7 @@ test("telas da clínica, Gestão e Minha conta sem violações", async ({ page }
   for (const path of [
     "inicio", "agenda", "pacientes", "gestao/profissionais", "gestao/servicos", "gestao/horarios", "gestao/equipe", "gestao/clinica",
     "gestao/auditoria", "conta", "inicio/oportunidades", "inicio/oportunidades/espera", "inicio/oportunidades/retornos",
-    "inicio/oportunidades/orcamentos", "gestao/oportunidades",
+    "inicio/oportunidades/orcamentos", "gestao/oportunidades", "financeiro", "financeiro/relatorio", "financeiro/categorias", "gestao/modulos",
   ]) {
     await page.goto(`/c/clinica-aurora/${path}`);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

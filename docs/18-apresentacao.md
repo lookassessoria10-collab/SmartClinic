@@ -11,7 +11,7 @@ ilustrativos — nenhum dado real de clínica ou paciente.
 | Parte | Conteúdo |
 |-------|----------|
 | Página inicial | Abertura, "Escolha o seu caminho", trilhas por perfil (Gestão, Recepção, Profissional), cartões "Antes × Com o smartclin", teste rápido (6 perguntas), índice de capítulos, chamada para criar conta / entrar |
-| Apresentação | 33 lâminas em 8 capítulos + abertura. Setas, Page Up/Down, Home/End, espaço, deslize no celular, F para tela cheia, Esc para sair, barra de progresso por capítulo, sumário com busca |
+| Apresentação | 37 lâminas em 9 capítulos + abertura (inclui Módulos e Financeiro). Setas, Page Up/Down, Home/End, espaço, deslize no celular, F para tela cheia, Esc para sair, barra de progresso por capítulo, sumário com busca |
 | Endereços | `#s/12` (completa, lâmina 12), `#t/recepcao/3` (trilha), âncoras da página inicial (`#trilhas`, `#teste`…) |
 
 ## Como editar
